@@ -1,8 +1,5 @@
 package mapred;
 
-/**
- * Created by TGIELBUT on 28.10.2016.
- */
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
@@ -17,6 +14,7 @@ public class MapEffectiveLinesOfCode extends Mapper<LongWritable, Text, Text, In
     public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         String line = value.toString().trim();
         if (!line.isEmpty() && !line.equals("{") && !line.equals("}")) {
+            //todo regex
             context.write(word, one);
         }
     }
