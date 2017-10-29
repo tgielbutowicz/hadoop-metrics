@@ -1,8 +1,5 @@
 package mapred;
 
-/**
- * Created by TGIELBUT on 28.10.2016.
- */
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;

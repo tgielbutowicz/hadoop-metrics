@@ -1,4 +1,4 @@
-package mapred;
+package mapred.wmc;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
