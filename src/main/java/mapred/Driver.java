@@ -2,7 +2,6 @@ package mapred;
 
 import java.io.IOException;
 
-import mapred.loc.MapEffectiveLinesOfCode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -12,6 +11,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
+import mapred.wmc.MapWeightedMethodsPerClass;
 import utils.WholeFileInputFormat;
 
 public class Driver {
@@ -30,7 +30,7 @@ public class Driver {
         job.setOutputFormatClass(TextOutputFormat.class);
 
         // Set Mapper & Reducer Class
-        job.setMapperClass(MapEffectiveLinesOfCode.class);
+        job.setMapperClass(MapWeightedMethodsPerClass.class);
         job.setReducerClass(KeyCountReducer.class);
 
         // No. of reduce tasks, equals no. output file

@@ -1,15 +1,27 @@
 package mapred.noc;
 
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class MapNumberOfChildren extends Mapper<Text, Text, Text, Text> {
+public class MapNumberOfChildren extends Mapper<Text, Text, Text, IntWritable> {
+    private final static Text supercls = new Text();
+    private final static IntWritable one = new IntWritable(1);
+
+    public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+        String fileContents = value.toString().trim();
+        Pattern superclassPattern = Pattern.compile("\\s+(extends\\s+)+(\\w+)");
+        Matcher superclassMatcher = superclassPattern.matcher(fileContents);
+        if (superclassMatcher.find()) {
+            supercls.set(superclassMatcher.group(2)); //todo search in import to filter out external classes
+        }
+        context.write(supercls, one);
+    }
 }
-// NOC equals the number of immediate child classes derived from a base class.
-// In Visual Basic .NET one uses the Inherits statement to derive sub-classes.
-// In classic Visual Basic inheritance is not available and thus NOC is always
-// zero.
-//
 // NOC measures the breadth of a class hierarchy, where maximum DIT measures the
 // depth. Depth is generally better than breadth, since it promotes reuse of
 // methods through inheritance. NOC and DIT are closely related. Inheritance

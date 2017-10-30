@@ -29,10 +29,7 @@ public class MapResponseForClass extends Mapper<Text, Text, Text, Text> {
 //
 // A study of 30 C++ projects suggests that an increase in RFC increases the
 // density of bugs and decreases quality. The study suggests "optimal" use for
-// RFC but doesn't tell what the optimum is. It sounds safe to assume that a
-// high RFC is detrimental in VB as well. Misra & Bhavsar: Relationships Between
-// Selected Software Measures and Latent Bug-Density: Guidelines for Improving
-// Quality. Springer-Verlag 2003.
+// RFC but doesn't tell what the optimum is.
 //
 // RFC is the original definition of the measure. It counts only the first level
 // of calls outside of the class. RFC’ measures the full response set, including
