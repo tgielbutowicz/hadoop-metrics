@@ -48,7 +48,7 @@ class WholeFileRecordReader extends RecordReader<Text, Text> {
 
     @Override
     public Text getCurrentKey() throws IOException, InterruptedException {
-        return new Text(this.fileSplit.getPath().getName());
+        return new Text(this.fileSplit.getPath().toString());
     }
 
     @Override
