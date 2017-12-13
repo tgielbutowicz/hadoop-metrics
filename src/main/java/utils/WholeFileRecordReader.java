@@ -13,7 +13,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-class WholeFileRecordReader extends RecordReader<Text, Text> {
+class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
 
     private FileSplit fileSplit;
     private Configuration conf;
@@ -47,8 +47,8 @@ class WholeFileRecordReader extends RecordReader<Text, Text> {
     }
 
     @Override
-    public Text getCurrentKey() throws IOException, InterruptedException {
-        return new Text(this.fileSplit.getPath().toString());
+    public MetricsWritable getCurrentKey() throws IOException, InterruptedException {
+        return new MetricsWritable(new Text(fileSplit.getPath().getParent().toString()),new Text(fileSplit.getPath().getName()));
     }
 
     @Override

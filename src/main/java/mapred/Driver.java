@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -13,43 +12,45 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import mapred.loc.MapLinesOfCode;
+import utils.MetricsWritable;
 import utils.RegexFilter;
 import utils.WholeFileInputFormat;
 
 public class Driver {
-    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, GitAPIException {
+    public static void main(String[] args)
+            throws IOException, ClassNotFoundException, InterruptedException, GitAPIException {
 
-//        Git git = Git.cloneRepository()
-//                .setURI( "https://github.com/eclipse/jgit.git" )
-//                .setDirectory(new File("github"))
-//                .call();
+        // Git git = Git.cloneRepository()
+        // .setURI( "https://github.com/eclipse/jgit.git" )
+        // .setDirectory(new File("github"))
+        // .call();
 
-        Configuration conf = new Configuration();
-        conf.set("file.pattern",".*.java");
-        Job job = Job.getInstance(conf, "Calculate Metrics");
+        Configuration metricsConf = new Configuration();
+        metricsConf.set("file.pattern", ".*.java");
+        Job metricsJob = Job.getInstance(metricsConf, "Calculate Metrics");
 
         // Set driver class
-//        job.setJarByClass(Driver.class);
+        metricsJob.setJarByClass(Driver.class);
 
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
+        metricsJob.setOutputKeyClass(MetricsWritable.class);
+        metricsJob.setOutputValueClass(IntWritable.class);
         // Set Input & Output Format
-        job.setInputFormatClass(WholeFileInputFormat.class);
-        job.setOutputFormatClass(TextOutputFormat.class);
+        metricsJob.setInputFormatClass(WholeFileInputFormat.class);
+        metricsJob.setOutputFormatClass(TextOutputFormat.class);
 
         // Set Mapper & Reducer Class
-        job.setMapperClass(MapLinesOfCode.class);
-        job.setReducerClass(KeyCountReducer.class);
+        metricsJob.setMapperClass(MapLinesOfCode.class);
+        metricsJob.setReducerClass(KeyCountReducer.class);
 
         // No. of reduce tasks, equals no. output file
-//        job.setNumReduceTasks(1);
+        // metricsJob.setNumReduceTasks(1);
 
         // HDFS input and output path
-        FileInputFormat.setInputDirRecursive(job,true);
-        FileInputFormat.setInputPathFilter(job, RegexFilter.class);
-        FileInputFormat.addInputPath(job, new Path(args[0])); //s227
-        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        FileInputFormat.setInputDirRecursive(metricsJob, true);
+        FileInputFormat.setInputPathFilter(metricsJob, RegexFilter.class);
+        FileInputFormat.addInputPath(metricsJob, new Path(args[0])); // s227
+        FileOutputFormat.setOutputPath(metricsJob, new Path(args[1]));
 
-        job.waitForCompletion(true);
+        metricsJob.waitForCompletion(true);
     }
 }
