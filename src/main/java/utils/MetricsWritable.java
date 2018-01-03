@@ -42,7 +42,7 @@ public class MetricsWritable implements WritableComparable<MetricsWritable> {
         if (cmp == 0) {
             cmp = project.compareTo(other.project);
             if(cmp == 0) {
-                file.compareTo(file);
+                cmp = file.compareTo(other.file);
             }
         }
         return cmp;
@@ -50,6 +50,14 @@ public class MetricsWritable implements WritableComparable<MetricsWritable> {
 
     public void setMetric(String metric) {
         this.metric = new Text(metric);
+    }
+
+    public void setFile(String file) {
+        this.file = new Text(file);
+    }
+
+    public void setProject(String project) {
+        this.project = new Text(project);
     }
 
     @Override

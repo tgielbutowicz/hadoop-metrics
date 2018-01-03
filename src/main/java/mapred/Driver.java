@@ -11,7 +11,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-import mapred.loc.MapLinesOfCode;
+import mapred.loc.MetricsMapper;
 import utils.MetricsWritable;
 import utils.RegexFilter;
 import utils.WholeFileInputFormat;
@@ -39,7 +39,7 @@ public class Driver {
         metricsJob.setOutputFormatClass(TextOutputFormat.class);
 
         // Set Mapper & Reducer Class
-        metricsJob.setMapperClass(MapLinesOfCode.class);
+        metricsJob.setMapperClass(MetricsMapper.class);
         metricsJob.setReducerClass(KeyCountReducer.class);
 
         // No. of reduce tasks, equals no. output file
