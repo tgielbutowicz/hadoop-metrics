@@ -1,4 +1,4 @@
-package mapred.loc;
+package mapred;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
