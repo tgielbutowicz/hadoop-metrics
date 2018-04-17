@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -21,6 +20,7 @@ import com.google.common.collect.Lists;
 
 import utils.MetricsWritable;
 import utils.RegexFilter;
+import utils.VertexWritable;
 import utils.WholeFileInputFormat;
 
 public class Driver {
@@ -42,7 +42,7 @@ public class Driver {
         }
 
         Configuration metricsConf = new Configuration();
-        metricsConf.set("mapred.textoutputformat.separatorText", ",");
+        metricsConf.set("mapred.textoutputformat.separator", ",");
         metricsConf.set("file.pattern", ".*.java");
         Job metricsJob = Job.getInstance(metricsConf, "Calculate Metrics");
 
@@ -50,7 +50,7 @@ public class Driver {
         metricsJob.setJarByClass(Driver.class);
 
         metricsJob.setOutputKeyClass(MetricsWritable.class);
-        metricsJob.setOutputValueClass(IntWritable.class);
+        metricsJob.setOutputValueClass(VertexWritable.class);
         // Set Input & Output Format
         metricsJob.setInputFormatClass(WholeFileInputFormat.class);
         metricsJob.setOutputFormatClass(TextOutputFormat.class);

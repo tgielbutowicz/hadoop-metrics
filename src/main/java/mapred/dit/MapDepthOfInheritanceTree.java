@@ -20,7 +20,7 @@ public class MapDepthOfInheritanceTree extends Mapper<Text, Text, Text, Text> {
         Matcher superclassMatcher = superclassPattern.matcher(fileContents);
         while (classMatcher.find()) {
             cls.set(classMatcher.group(2));
-            if(superclassMatcher.find()) {
+            if (superclassMatcher.find()) {
                 supercls.set(superclassMatcher.group(2));
             } else {
                 supercls.set("1");
