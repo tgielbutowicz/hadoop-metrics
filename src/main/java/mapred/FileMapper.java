@@ -7,16 +7,16 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-
 import utils.MetricsWritable;
 import utils.VertexWritable;
 
-public class MetricsMapper extends Mapper<MetricsWritable, Text, MetricsWritable, VertexWritable> {
+public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, VertexWritable> {
 
-    private final static Text cls = new Text();
-    private final static Text supercls = new Text();
+    private String cls;
+    private String supercls;
 
     public void map(MetricsWritable key, Text value, Context context) throws IOException, InterruptedException {
+        //todo separate classes from files
         String fileContents = value.toString().trim();
 
         Pattern newLinePattern = Pattern.compile("\r\n|\r|\n");
@@ -28,22 +28,13 @@ public class MetricsMapper extends Mapper<MetricsWritable, Text, MetricsWritable
         Pattern superclassPattern = Pattern.compile("\\s+(extends\\s+)+(\\w+)");
         Matcher classMatcher = classPattern.matcher(fileContents);
         Matcher superclassMatcher = superclassPattern.matcher(fileContents);
-        while (classMatcher.find()) {
-            cls.set(classMatcher.group(2));
-            if (superclassMatcher.find()) {
-                supercls.set(superclassMatcher.group(2));
-            } else {
-                supercls.set("1");
-            }
-//            context.write(cls, supercls);
-        }
 
         key.setMetric("WMC");
         int methods = 0;
         while (tagMatcher.find()) {
             methods++;
         }
-        context.write(key, getValueoutWithVertexId(methods));
+        context.write(key, getValueoutAnonymousVertexWithValue(methods));
 
         key.setMetric("LOC");
         int lines = 0;
@@ -51,13 +42,35 @@ public class MetricsMapper extends Mapper<MetricsWritable, Text, MetricsWritable
         {
             lines ++;
         }
-        context.write(key, getValueoutWithVertexId(lines));
-        key.setFile("Total");
+        context.write(key, getValueoutAnonymousVertexWithValue(lines));
+
+        key.setMetric("DIT");
+        while (classMatcher.find()) {
+            cls = classMatcher.group(2);
+            if (superclassMatcher.find()) {
+                supercls = superclassMatcher.group(2);
+            } else {
+                supercls = "Object";
+            }
+            VertexWritable valueout =  new VertexWritable(new Text(cls));
+            valueout.addVertex(new Text(supercls));
+            context.write(key, valueout);
+            for(Text val : valueout.getEdges()) {
+                key.setFile(val.toString());
+                VertexWritable message = new VertexWritable(new Text(cls));
+                context.write(key, message);
+            }
+        }
+
+        key.setMetric("LOC");
+        key.setFile("Total LOC");
         key.setProject("");
-        context.write(key, getValueoutWithVertexId(lines));
+        context.write(key, getValueoutAnonymousVertexWithValue(lines));
     }
 
-    private VertexWritable getValueoutWithVertexId(int lines) {
-        return new VertexWritable(new IntWritable(lines));
+    private VertexWritable getValueoutAnonymousVertexWithValue(int lines) {
+        VertexWritable vertexWritable = new VertexWritable(new Text(""));
+        vertexWritable.setValue(new IntWritable(lines));
+        return vertexWritable;
     }
 }

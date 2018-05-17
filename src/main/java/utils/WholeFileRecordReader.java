@@ -48,6 +48,7 @@ class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
 
     @Override
     public MetricsWritable getCurrentKey() throws IOException, InterruptedException {
+        //todo package name instead path
         return new MetricsWritable(new Text(fileSplit.getPath().getParent().toString()),new Text(fileSplit.getPath().getName()));
     }
 

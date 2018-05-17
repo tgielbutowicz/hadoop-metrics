@@ -3,7 +3,8 @@ package utils;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -11,57 +12,104 @@ import org.apache.hadoop.io.Writable;
 
 public class VertexWritable implements Writable, Cloneable {
 
-    private IntWritable vertex;
-    private TreeSet<Text> edges;
+    private Text vertex;
+    private List<Text> edges;
+    private IntWritable value;
 
     public VertexWritable() {
         super();
     }
 
-    public VertexWritable(IntWritable VertexId) {
+    public VertexWritable(Text VertexId) {
         super();
         this.vertex = VertexId;
+        this.value = new IntWritable();
     }
 
     public void write(DataOutput dataOutput) throws IOException {
-        vertex.write(dataOutput);
+        if(vertex == null) {
+            dataOutput.writeBoolean(false);
+        } else {
+            dataOutput.writeBoolean(true);
+            vertex.write(dataOutput);
+        }
+        if (edges == null) {
+            dataOutput.writeInt(-1);
+        } else {
+            dataOutput.writeInt(edges.size());
+            for (Text l : edges) {
+                l.write(dataOutput);
+            }
+        }
+        value.write(dataOutput);
     }
 
     public void readFields(DataInput dataInput) throws IOException {
-        vertex = new IntWritable();
-        vertex.readFields(dataInput);
+        if(dataInput.readBoolean()) {
+            vertex = new Text();
+            vertex.readFields(dataInput);
+        } else {
+            vertex = null;
+        }
+        int length = dataInput.readInt();
+        if (length > -1) {
+            edges = new ArrayList<>();
+            for (int i = 0; i < length; i++) {
+                Text temp = new Text();
+                temp.readFields(dataInput);
+                edges.add(temp);
+            }
+        } else {
+            edges = null;
+        }
+        value = new IntWritable();
+        value.readFields(dataInput);
     }
 
     @Override
     public String toString() {
-        return "VertexWritable [minimalVertexId=" + vertex + ", pointsTo=" + edges + "]";
+        return "VertexWritable [vertexId=" + vertex + ", pointsTo=" + edges + ", value=" + value + "]";
     }
 
     @Override
     protected VertexWritable clone() {
-        VertexWritable toReturn = new VertexWritable(new IntWritable(vertex.get()));
+        VertexWritable toReturn = new VertexWritable(new Text(vertex));
         if (edges != null) {
-            toReturn.edges = new TreeSet<>();
+            toReturn.edges = new ArrayList<>();
             for (Text l : edges) {
                 toReturn.edges.add(new Text(l.toString()));
             }
         }
+        toReturn.setValue(new IntWritable(value.get()));
         return toReturn;
     }
 
-    public TreeSet<Text> getEdges() {
+    public boolean isMessage() {
+        if (edges == null)
+            return true;
+        else
+            return false;
+    }
+
+    public List<Text> getEdges() {
         return edges;
     }
 
-    public void setEdges(TreeSet<Text> edges) {
-        this.edges = edges;
+    public void addVertex(Text className) {
+        if (edges == null)
+            edges = new ArrayList<>();
+        edges.add(className);
     }
 
-    public IntWritable getVertex() {
+    public Text getVertex() {
         return vertex;
     }
 
-    public void setVertex(IntWritable vertex) {
-        this.vertex = vertex;
+    public IntWritable getValue() {
+        return value;
+    }
+
+    public void setValue(IntWritable value) {
+        this.value = value;
     }
 }

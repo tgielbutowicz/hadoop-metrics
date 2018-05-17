@@ -7,7 +7,7 @@ import java.io.IOException;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
-public class MetricsWritable implements WritableComparable<MetricsWritable> {
+public class MetricsWritable implements WritableComparable<MetricsWritable>, Cloneable {
 
     private Text metric;
     private Text project;
@@ -60,8 +60,20 @@ public class MetricsWritable implements WritableComparable<MetricsWritable> {
         this.project = new Text(project);
     }
 
+    public Text getFile() {
+        return file;
+    }
+
+    public Text getMetric() {
+        return metric;
+    }
+
+    public Text getProject() {
+        return project;
+    }
+
     @Override
     public String toString(){
-        return metric + "," + project + "," + file;
+        return metric + ";" + project + ";" + file;
     }
 }
