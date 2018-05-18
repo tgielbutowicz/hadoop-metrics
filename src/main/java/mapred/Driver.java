@@ -107,11 +107,12 @@ public class Driver {
         }
 
         metricsConf.set("recursion.depth", depth + "");
+        metricsConf.set("mapred.textoutputformat.separator", ";");
         metricsJob = Job.getInstance(metricsConf, depth + " : Calculate Metrics - Merger Results");
 
         // Set Mapper & Reducer Class
         metricsJob.setMapperClass(GraphBuildingMapper.class);
-        metricsJob.setReducerClass(GraphBuildingReducer.class);
+        metricsJob.setReducerClass(MetricOutputReducer.class);
 
         out = new Path(args[1] + depth);
 
