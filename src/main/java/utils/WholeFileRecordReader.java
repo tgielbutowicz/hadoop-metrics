@@ -1,6 +1,8 @@
 package utils;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -19,11 +21,13 @@ class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
     private Configuration conf;
     private Text value = new Text();
     private boolean processed = false;
+    private Pattern packagePattern;
 
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
         this.fileSplit = (FileSplit) split;
         this.conf = context.getConfiguration();
+        this.packagePattern = Pattern.compile("package\\s+([\\w\\.]+);");
     }
 
     @Override
@@ -48,8 +52,9 @@ class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
 
     @Override
     public MetricsWritable getCurrentKey() throws IOException, InterruptedException {
-        //todo package name instead path
-        return new MetricsWritable(new Text(fileSplit.getPath().getParent().toString()),new Text(fileSplit.getPath().getName()));
+        Matcher packageMatcher = packagePattern.matcher(value.toString());
+        packageMatcher.find();
+        return new MetricsWritable(new Text(packageMatcher.group(1)),new Text(fileSplit.getPath().getName()));
     }
 
     @Override
