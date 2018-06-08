@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import utils.Metric;
 import utils.MetricsWritable;
 import utils.VertexWritable;
 
@@ -29,40 +30,37 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
         Matcher classMatcher = classPattern.matcher(fileContents);
         Matcher superclassMatcher = superclassPattern.matcher(fileContents);
 
-        key.setMetric("WMC");
+        key.setMetric(Metric.WMC);
         int methods = 0;
         while (tagMatcher.find()) {
             methods++;
         }
         context.write(key, getValueoutAnonymousVertexWithValue(methods));
 
-        key.setMetric("LOC");
+        key.setMetric(Metric.LOC);
         int lines = 0;
-        while (locMatcher.find())
-        {
-            lines ++;
+        while (locMatcher.find()) {
+            lines++;
         }
         context.write(key, getValueoutAnonymousVertexWithValue(lines));
 
-        key.setMetric("DIT");
+        key.setMetric(Metric.DIT);
         while (classMatcher.find()) {
             cls = classMatcher.group(2);
             if (superclassMatcher.find()) {
-                supercls = superclassMatcher.group(2);
+                supercls = superclassMatcher.group(2)+".java";
             } else {
-                supercls = "Object";
+                supercls = "Object.java";
             }
-            VertexWritable valueout =  new VertexWritable(new Text(cls));
+            VertexWritable valueout = new VertexWritable();
             valueout.addVertex(new Text(supercls));
             context.write(key, valueout);
-            for(Text val : valueout.getEdges()) {
-                key.setFile(val.toString());
-                VertexWritable message = new VertexWritable(new Text(cls));
-                context.write(key, message);
-            }
+            key.setFile(supercls);
+            VertexWritable message = new VertexWritable(new Text(cls));
+            context.write(key, message);
         }
 
-        key.setMetric("LOC");
+        key.setMetric(Metric.LOC);
         key.setFile("Total LOC");
         key.setProject("");
         context.write(key, getValueoutAnonymousVertexWithValue(lines));

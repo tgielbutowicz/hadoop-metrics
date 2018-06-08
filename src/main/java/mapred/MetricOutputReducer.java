@@ -13,6 +13,7 @@ public class MetricOutputReducer extends Reducer<MetricsWritable, VertexWritable
             InterruptedException {
         if (key.getMetric().toString().equals("DIT")) {
             for (VertexWritable val : values) {
+                //todo when the top class isnt Object ten +1
                 context.write(key, new IntWritable(val.getEdges().size()));
             }
         } else { // pass through

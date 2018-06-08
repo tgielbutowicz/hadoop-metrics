@@ -4,52 +4,67 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableUtils;
 
 public class MetricsWritable implements WritableComparable<MetricsWritable>, Cloneable {
 
-    private Text metric;
+    private Metric metric;
     private Text project;
     private Text file;
 
     public MetricsWritable() {
-        metric = new Text();
         project = new Text();
         file = new Text();
     }
 
     public MetricsWritable(Text project, Text file) {
-        metric = new Text();
         this.project = project;
         this.file = file;
     }
 
     public void write(DataOutput dataOutput) throws IOException {
-        metric.write(dataOutput);
+        WritableUtils.writeEnum(dataOutput, metric);
         project.write(dataOutput);
         file.write(dataOutput);
     }
 
     public void readFields(DataInput dataInput) throws IOException {
-        metric.readFields(dataInput);
+        metric = WritableUtils.readEnum(dataInput, Metric.class);
         project.readFields(dataInput);
         file.readFields(dataInput);
     }
 
+    @Override
     public int compareTo(MetricsWritable other) {
         int cmp = metric.compareTo(other.metric);
         if (cmp == 0) {
             cmp = project.compareTo(other.project);
-            if(cmp == 0) {
+            if (cmp == 0) {
                 cmp = file.compareTo(other.file);
             }
         }
         return cmp;
     }
 
-    public void setMetric(String metric) {
-        this.metric = new Text(metric);
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof MetricsWritable)) {
+            return false;
+        } else {
+            MetricsWritable other = (MetricsWritable) o;
+            return this.metric.equals(other.getMetric()) && this.project.equals(other.getProject()) && this.file.equals(other.getFile());
+        }
+    }
+
+    public void setMetric(Metric metric) {
+        this.metric = metric;
+    }
+
+    public Metric getMetric() {
+        return metric;
     }
 
     public void setFile(String file) {
@@ -64,16 +79,13 @@ public class MetricsWritable implements WritableComparable<MetricsWritable>, Clo
         return file;
     }
 
-    public Text getMetric() {
-        return metric;
-    }
 
     public Text getProject() {
         return project;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return metric + ";" + project + ";" + file;
     }
 }

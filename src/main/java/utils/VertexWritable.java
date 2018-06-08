@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -15,9 +16,11 @@ public class VertexWritable implements Writable, Cloneable {
     private Text vertex;
     private List<Text> edges;
     private IntWritable value;
+    private BooleanWritable isNew = new BooleanWritable(true);
 
     public VertexWritable() {
         super();
+        this.value = new IntWritable();
     }
 
     public VertexWritable(Text VertexId) {
@@ -42,6 +45,7 @@ public class VertexWritable implements Writable, Cloneable {
             }
         }
         value.write(dataOutput);
+        isNew.write(dataOutput);
     }
 
     public void readFields(DataInput dataInput) throws IOException {
@@ -64,16 +68,22 @@ public class VertexWritable implements Writable, Cloneable {
         }
         value = new IntWritable();
         value.readFields(dataInput);
+        isNew.readFields(dataInput);
     }
 
     @Override
     public String toString() {
-        return "VertexWritable [vertexId=" + vertex + ", pointsTo=" + edges + ", value=" + value + "]";
+        return "VertexWritable [vertexId=" + vertex + ", pointsTo=" + edges + ", value=" + value + ", isNew=" + isNew + "]";
     }
 
     @Override
-    protected VertexWritable clone() {
-        VertexWritable toReturn = new VertexWritable(new Text(vertex));
+    public VertexWritable clone() {
+        VertexWritable toReturn;
+        if(vertex != null) {
+            toReturn = new VertexWritable(new Text(vertex));
+        } else {
+            toReturn = new VertexWritable();
+        }
         if (edges != null) {
             toReturn.edges = new ArrayList<>();
             for (Text l : edges) {
@@ -81,6 +91,7 @@ public class VertexWritable implements Writable, Cloneable {
             }
         }
         toReturn.setValue(new IntWritable(value.get()));
+        toReturn.setIsNew(new BooleanWritable(true));
         return toReturn;
     }
 
@@ -111,5 +122,13 @@ public class VertexWritable implements Writable, Cloneable {
 
     public void setValue(IntWritable value) {
         this.value = value;
+    }
+
+    public BooleanWritable getIsNew() {
+        return isNew;
+    }
+
+    public void setIsNew(BooleanWritable isNew) {
+        this.isNew = isNew;
     }
 }
