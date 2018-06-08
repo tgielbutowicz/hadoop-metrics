@@ -3,6 +3,7 @@ package mapred;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import utils.MetricsWritable;
 import utils.VertexWritable;
@@ -13,8 +14,12 @@ public class MetricOutputReducer extends Reducer<MetricsWritable, VertexWritable
             InterruptedException {
         if (key.getMetric().toString().equals("DIT")) {
             for (VertexWritable val : values) {
-                //todo when the top class isnt Object ten +1
-                context.write(key, new IntWritable(val.getEdges().size()));
+                int depth = val.getEdges().size();
+                Text parent = val.getEdges().get(0);
+                if(!parent.toString().equals("Object.java")) {
+                    depth++;
+                }
+                context.write(key, new IntWritable(depth));
             }
         } else { // pass through
             for (VertexWritable val : values) {

@@ -39,14 +39,14 @@ public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritabl
                     messages.add(val.getVertex());
                 } else {
                     master = val.clone();
-                    master.setIsNew(new BooleanWritable(false)); //when emitting message
                 }
             }
+            master.addVertex(key.getFile());
+            master.setIsNew(new BooleanWritable(false)); //when emitting message
             VertexWritable value;
             for (Text message : messages) {
-                master.addVertex(key.getFile());
                 value = master.clone();
-                key.setFile(message.toString() + ".java");
+                key.setFile(message.toString());
                 context.write(key, value);
                 System.out.println("New vertex: " + key + value);
             }

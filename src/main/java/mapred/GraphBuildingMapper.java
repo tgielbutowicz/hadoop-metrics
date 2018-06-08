@@ -22,7 +22,8 @@ public class GraphBuildingMapper extends Mapper<MetricsWritable, VertexWritable,
                 key.setFile(Iterators.getLast(value.getEdges().iterator()).toString());
                 context.write(key, message);
             }
-
+        } else {
+            context.write(key, value);
         }
     }
 }
