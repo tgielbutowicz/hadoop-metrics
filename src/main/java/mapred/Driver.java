@@ -1,10 +1,7 @@
 package mapred;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.List;
-
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
@@ -17,22 +14,23 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.util.FS;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-
 import utils.MetricsWritable;
 import utils.RegexFilter;
 import utils.VertexWritable;
 import utils.WholeFileInputFormat;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
+
 public class Driver {
     public static void main(String[] args)
             throws IOException, ClassNotFoundException, InterruptedException, GitAPIException {
 
-        String workingDir = "c:/temp/github";
+        String workingDir = args[0];
         List<String> repositoriesUri = Lists.newArrayList("https://github.com/eclipse/jgit.git",
-                "https://github.com/tgielbutowicz/hadoop-metrics.git");
+                "https://github.com/tgielbutowicz/hadoop-metrics.git","https://github.com/thinkaurelius/titan.git");
         for (String uri : repositoriesUri) {
             String project = Iterables.getLast(Lists.newArrayList(uri.split("/"))).replace(".git", "");
             File destination = new File(workingDir + "/" + project);
@@ -82,8 +80,7 @@ public class Driver {
 
         long counter = metricsJob.getCounters().findCounter(KeyCountReducer.UpdateCounter.UPDATED).getValue();
         depth++;
-        in = out;
-        while (counter > 0) {
+        while (depth < 5) {
             metricsConf.set("recursion.depth", depth + "");
             metricsJob = Job.getInstance(metricsConf, "Calculate Metrics - Build Graph" + depth);
 
@@ -91,11 +88,11 @@ public class Driver {
             metricsJob.setMapperClass(GraphBuildingMapper.class);
             metricsJob.setReducerClass(GraphBuildingReducer.class);
 
+            in = out;
             out = new Path(args[1] + depth);
-
             FileInputFormat.addInputPath(metricsJob, in);
-
             FileOutputFormat.setOutputPath(metricsJob, out);
+
             metricsJob.setInputFormatClass(SequenceFileInputFormat.class);
             metricsJob.setOutputFormatClass(SequenceFileOutputFormat.class);
             metricsJob.setOutputKeyClass(MetricsWritable.class);
@@ -111,14 +108,14 @@ public class Driver {
         metricsJob = Job.getInstance(metricsConf, depth + " : Calculate Metrics - Merger Results");
 
         // Set Mapper & Reducer Class
-        metricsJob.setMapperClass(GraphBuildingMapper.class);
+        metricsJob.setMapperClass(MetricOutputMapper.class);
         metricsJob.setReducerClass(MetricOutputReducer.class);
 
+        in = out;
         out = new Path(args[1] + depth);
-
         FileInputFormat.addInputPath(metricsJob, in);
-
         FileOutputFormat.setOutputPath(metricsJob, out);
+
         metricsJob.setInputFormatClass(SequenceFileInputFormat.class);
         metricsJob.setOutputFormatClass(TextOutputFormat.class);
         metricsJob.setOutputKeyClass(MetricsWritable.class);

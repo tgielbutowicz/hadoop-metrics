@@ -13,7 +13,7 @@ import org.apache.hadoop.io.Writable;
 
 public class VertexWritable implements Writable, Cloneable {
 
-    private Text vertex;
+    private Text message;
     private List<Text> edges;
     private IntWritable value;
     private BooleanWritable isNew = new BooleanWritable(true);
@@ -23,18 +23,18 @@ public class VertexWritable implements Writable, Cloneable {
         this.value = new IntWritable();
     }
 
-    public VertexWritable(Text VertexId) {
+    public VertexWritable(Text message) {
         super();
-        this.vertex = VertexId;
+        this.message = message;
         this.value = new IntWritable();
     }
 
     public void write(DataOutput dataOutput) throws IOException {
-        if(vertex == null) {
+        if(message == null) {
             dataOutput.writeBoolean(false);
         } else {
             dataOutput.writeBoolean(true);
-            vertex.write(dataOutput);
+            message.write(dataOutput);
         }
         if (edges == null) {
             dataOutput.writeInt(-1);
@@ -50,10 +50,10 @@ public class VertexWritable implements Writable, Cloneable {
 
     public void readFields(DataInput dataInput) throws IOException {
         if(dataInput.readBoolean()) {
-            vertex = new Text();
-            vertex.readFields(dataInput);
+            message = new Text();
+            message.readFields(dataInput);
         } else {
-            vertex = null;
+            message = null;
         }
         int length = dataInput.readInt();
         if (length > -1) {
@@ -73,14 +73,14 @@ public class VertexWritable implements Writable, Cloneable {
 
     @Override
     public String toString() {
-        return "VertexWritable [vertexId=" + vertex + ", pointsTo=" + edges + ", value=" + value + ", isNew=" + isNew + "]";
+        return "VertexWritable [vertexId=" + message + ", pointsTo=" + edges + ", value=" + value + ", isNew=" + isNew + "]";
     }
 
     @Override
     public VertexWritable clone() {
         VertexWritable toReturn;
-        if(vertex != null) {
-            toReturn = new VertexWritable(new Text(vertex));
+        if(message != null) {
+            toReturn = new VertexWritable(new Text(message));
         } else {
             toReturn = new VertexWritable();
         }
@@ -112,8 +112,8 @@ public class VertexWritable implements Writable, Cloneable {
         edges.add(className);
     }
 
-    public Text getVertex() {
-        return vertex;
+    public Text getMessage() {
+        return message;
     }
 
     public IntWritable getValue() {

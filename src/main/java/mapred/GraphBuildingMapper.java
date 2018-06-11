@@ -1,16 +1,13 @@
 package mapred;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.collect.Iterators;
-import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import utils.Metric;
 import utils.MetricsWritable;
 import utils.VertexWritable;
+
+import java.io.IOException;
 
 public class GraphBuildingMapper extends Mapper<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 

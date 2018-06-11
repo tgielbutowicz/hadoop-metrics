@@ -36,7 +36,7 @@ public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritabl
                 valuesCount++;
                 System.out.println("Vertex: " + val);
                 if (val.isMessage()) {
-                    messages.add(val.getVertex());
+                    messages.add(val.getMessage());
                 } else {
                     master = val.clone();
                 }

@@ -37,7 +37,7 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
             for (VertexWritable val : values) {
                 System.out.println("Vertex: " + val);
                 if (val.isMessage()) {
-                    messages.add(val.getVertex());
+                    messages.add(val.getMessage());
                 } else {
                     master = val.clone();
                 }
