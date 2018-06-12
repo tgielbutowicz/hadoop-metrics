@@ -37,17 +37,17 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.javaparser</groupId>
-            <artifactId>java-symbol-solver-core</artifactId>
-            <version>0.6.3</version>
-        </dependency>
-
-
-        <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>4.9.0.201710071750-r</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>azure-storage</artifactId>
+            <version>7.0.0</version>
+        </dependency>
+
 
     </dependencies>
 
@@ -58,7 +58,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>fully.qualified.MainClass</mainClass>
+                            <mainClass>mapred.Driver</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

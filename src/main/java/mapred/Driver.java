@@ -92,6 +92,9 @@ public class Driver {
             metricsConf.set("recursion.depth", depth + "");
             metricsJob = Job.getInstance(metricsConf, "Calculate Metrics - Build Graph" + depth);
 
+            // Set driver class
+            metricsJob.setJarByClass(Driver.class);
+
             // Set Mapper & Reducer Class
             metricsJob.setMapperClass(GraphBuildingMapper.class);
             metricsJob.setReducerClass(GraphBuildingReducer.class);
@@ -115,6 +118,9 @@ public class Driver {
         metricsConf.set("recursion.depth", depth + "");
         metricsConf.set("mapred.textoutputformat.separator", ";");
         metricsJob = Job.getInstance(metricsConf, depth + " : Calculate Metrics - Merger Results");
+
+        // Set driver class
+        metricsJob.setJarByClass(Driver.class);
 
         // Set Mapper & Reducer Class
         metricsJob.setMapperClass(MetricOutputMapper.class);
