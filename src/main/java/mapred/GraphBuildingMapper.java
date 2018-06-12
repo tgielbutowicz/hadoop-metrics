@@ -13,12 +13,10 @@ public class GraphBuildingMapper extends Mapper<MetricsWritable, VertexWritable,
 
     public void map(MetricsWritable key, VertexWritable value, Context context) throws IOException, InterruptedException {
         if (Metric.DIT.equals(key.getMetric())) {
-            if (value.getIsNew().get()) {
-                context.write(key, value);
-                VertexWritable message = new VertexWritable(new Text(key.getFile()));
-                key.setFile(Iterators.getLast(value.getEdges().iterator()).toString());
-                context.write(key, message);
-            }
+            context.write(key, value);
+            VertexWritable message = new VertexWritable(new Text(key.getFile()));
+            key.setFile(Iterators.getLast(value.getEdges().iterator()).toString());
+            context.write(key, message);
         } else {
             context.write(key, value);
         }

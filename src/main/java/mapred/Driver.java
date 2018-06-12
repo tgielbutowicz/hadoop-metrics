@@ -25,6 +25,13 @@ import java.nio.file.Files;
 import java.util.List;
 
 public class Driver {
+
+    public static final int INTERATIONS_LIMIT = 20;
+
+    public enum UpdateCounter {
+        UPDATED
+    }
+
     public static void main(String[] args)
             throws IOException, ClassNotFoundException, InterruptedException, GitAPIException {
 
@@ -78,9 +85,10 @@ public class Driver {
 
         metricsJob.waitForCompletion(true);
 
-        long counter = metricsJob.getCounters().findCounter(KeyCountReducer.UpdateCounter.UPDATED).getValue();
+        long updated_prev = 0;
+        long updated = metricsJob.getCounters().findCounter(UpdateCounter.UPDATED).getValue();
         depth++;
-        while (depth < 5) {
+        while (updated_prev != updated && depth < INTERATIONS_LIMIT) {
             metricsConf.set("recursion.depth", depth + "");
             metricsJob = Job.getInstance(metricsConf, "Calculate Metrics - Build Graph" + depth);
 
@@ -99,8 +107,9 @@ public class Driver {
             metricsJob.setOutputValueClass(VertexWritable.class);
 
             metricsJob.waitForCompletion(true);
+            updated_prev = updated;
+            updated = metricsJob.getCounters().findCounter(UpdateCounter.UPDATED).getValue();
             depth++;
-            counter = metricsJob.getCounters().findCounter(KeyCountReducer.UpdateCounter.UPDATED).getValue();
         }
 
         metricsConf.set("recursion.depth", depth + "");

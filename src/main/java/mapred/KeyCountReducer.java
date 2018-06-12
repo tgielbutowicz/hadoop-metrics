@@ -1,6 +1,6 @@
 package mapred;
 
-import org.apache.hadoop.io.BooleanWritable;
+import mapred.Driver.UpdateCounter;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -14,16 +14,10 @@ import java.util.List;
 
 public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
-    public enum UpdateCounter {
-        UPDATED
-    }
-
     @Override
     protected void setup(Context context) throws IOException,
             InterruptedException {
         super.setup(context);
-        int depth = Integer.parseInt(context.getConfiguration().get("recursion.depth"));
-        System.out.println("---------------------------- KeyCountReducer recursion.depth | " + depth);
     }
 
     @Override
@@ -31,21 +25,14 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
             InterruptedException {
         int sum = 0;
         if (Metric.DIT.equals(key.getMetric())) {
-            System.out.println("Reducing for key: " + key);
             List<Text> messages = new ArrayList<>();
-            VertexWritable master = null;
+            VertexWritable master = new VertexWritable();
             for (VertexWritable val : values) {
-                System.out.println("Vertex: " + val);
                 if (val.isMessage()) {
                     messages.add(val.getMessage());
                 } else {
                     master = val.clone();
                 }
-            }
-            if (master == null) {
-                master = new VertexWritable();
-            } else {
-                master.setIsNew(new BooleanWritable(false)); //when emitting message
             }
             master.addVertex(key.getFile());
             VertexWritable value;
@@ -53,8 +40,7 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
                 value = master.clone();
                 key.setFile(message.toString() + ".java");
                 context.write(key, value);
-                System.out.println("New vertex: " + key + value);
-                context.getCounter(UpdateCounter.UPDATED).increment(1);
+                context.getCounter(UpdateCounter.UPDATED).increment(value.getEdges().size());
             }
         } else {
             for (VertexWritable val : values) {
