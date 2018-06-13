@@ -1,6 +1,8 @@
 package testcases;
 
-public class ClassFour {
+import utils.MetricsWritable;
+
+public class ClassFour extends MetricsWritable {
     private void testMethod(){
 
     }

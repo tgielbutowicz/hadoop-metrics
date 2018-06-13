@@ -10,6 +10,7 @@ import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.google.common.collect.Sets;
 import org.apache.hadoop.io.IntWritable;
@@ -28,8 +29,6 @@ import java.util.regex.Pattern;
 
 public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, VertexWritable> {
 
-    private String cls;
-    private String supercls;
     private Set<String> methodsAndCalls = Sets.newHashSet();
 
     public void map(MetricsWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -44,10 +43,6 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
                 .compile("(public|protected|private|static|\\s) +[\\w\\<\\>\\[\\]]+\\s+(\\w+) *\\([^\\)]*\\) *(\\{?|[^;])");
         Matcher locMatcher = newLinePattern.matcher(fileContents);
         Matcher tagMatcher = tagPattern.matcher(fileContents);
-        Pattern classPattern = Pattern.compile("\\s*(public|private)\\s+class\\s+(\\w+)");
-        Pattern superclassPattern = Pattern.compile("\\s+(extends\\s+)+(\\w+)");
-        Matcher classMatcher = classPattern.matcher(fileContents);
-        Matcher superclassMatcher = superclassPattern.matcher(fileContents);
         Pattern methodCallPattern = Pattern.compile("(\\.[\\s\\n\\r]*[\\w]+)[\\s\\n\\r]*(?=\\(.*\\))");
         Matcher methodCallMatcher = methodCallPattern.matcher(fileContents);
 
@@ -86,39 +81,49 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
                     numberOfFields++;
                     sumMF += type.getMethods().stream().map(method -> method.getBody().toString()).filter(body -> body.contains(field.toString())).count();
                 }
-                LCOM = Math.round((1 - (sumMF/numberOfMethods*numberOfFields)) * 100);
+                LCOM = Math.round((1 - (sumMF / numberOfMethods * numberOfFields)) * 100);
             }
             context.write(key, getValueoutAnonymousVertexWithValue(LCOM));
         }
         methodsAndCalls.clear();
         new MethodVisitor().visit(compilationUnit, null);
 
-        if (classMatcher.find()) {
-            key.setMetric(Metric.DIT);
-            cls = classMatcher.group(2);
-            if (superclassMatcher.find()) {
-                supercls = superclassMatcher.group(2) + ".java";
-            } else {
-                supercls = "Object.java";
+        String clsName;
+        String superclsName;
+        VertexWritable valueout;
+        for (TypeDeclaration<?> type : types) {
+            if (type instanceof ClassOrInterfaceDeclaration) {
+                ClassOrInterfaceDeclaration cls = (ClassOrInterfaceDeclaration) type;
+                clsName = cls.getNameAsString();
+                if (cls.getExtendedTypes().isEmpty()) {
+                    key.setMetric(Metric.NOC);
+                    context.write(key, getValueoutAnonymousVertexWithValue(0));
+                    superclsName = "Object.java";
+                    valueout = new VertexWritable();
+                    valueout.addVertex(new Text(superclsName));
+                    context.write(key, valueout);
+                    key.setMetric(Metric.DIT);
+                    key.setFile(superclsName);
+                    VertexWritable message = new VertexWritable(new Text(clsName));
+                    context.write(key, message);
+                } else {
+                    for (ClassOrInterfaceType supercls : cls.getExtendedTypes()) {
+                        superclsName = supercls.getName().asString() + ".java";
+                        valueout = new VertexWritable();
+                        valueout.addVertex(new Text(superclsName));
+                        key.setMetric(Metric.CBO);
+                        context.write(key, getValueoutAnonymousVertexWithValue(1));
+                        key.setMetric(Metric.DIT);
+                        context.write(key, valueout);
+                        key.setFile(superclsName);
+                        VertexWritable message = new VertexWritable(new Text(clsName));
+                        context.write(key, message);
+                        key.setMetric(Metric.NOC);
+                        context.write(key, getValueoutAnonymousVertexWithValue(1));
+                    }
+                }
             }
-            VertexWritable valueout = new VertexWritable();
-            valueout.addVertex(new Text(supercls));
-            context.write(key, valueout);
-            key.setFile(supercls);
-            VertexWritable message = new VertexWritable(new Text(cls));
-            context.write(key, message);
-            key.setMetric(Metric.NOC);
-            context.write(key, getValueoutAnonymousVertexWithValue(1));
-            key.setMetric(Metric.CBO);
-            context.write(key, getValueoutAnonymousVertexWithValue(1));
-        } else {
-            key.setMetric(Metric.NOC);
-            context.write(key, getValueoutAnonymousVertexWithValue(0));
         }
-
-        key.setMetric(Metric.LOC);
-        key.setFile("Total LOC");
-        context.write(key, getValueoutAnonymousVertexWithValue(lines));
     }
 
     private VertexWritable getValueoutAnonymousVertexWithValue(int lines) {
