@@ -38,6 +38,7 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
         NodeList<ImportDeclaration> imports = compilationUnit.getImports();
         NodeList<TypeDeclaration<?>> types = compilationUnit.getTypes();
 
+        String packageName = compilationUnit.getPackageDeclaration().toString().replace(";",".").split("\\s")[1];
         Pattern newLinePattern = Pattern.compile("\r\n|\r|\n");
         Pattern tagPattern = Pattern
                 .compile("(public|protected|private|static|\\s) +[\\w\\<\\>\\[\\]]+\\s+(\\w+) *\\([^\\)]*\\) *(\\{?|[^;])");
@@ -94,21 +95,25 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
         for (TypeDeclaration<?> type : types) {
             if (type instanceof ClassOrInterfaceDeclaration) {
                 ClassOrInterfaceDeclaration cls = (ClassOrInterfaceDeclaration) type;
-                clsName = cls.getNameAsString();
+                clsName = packageName + cls.getNameAsString();
                 if (cls.getExtendedTypes().isEmpty()) {
                     key.setMetric(Metric.NOC);
                     context.write(key, getValueoutAnonymousVertexWithValue(0));
                     superclsName = "Object.java";
                     valueout = new VertexWritable();
                     valueout.addVertex(new Text(superclsName));
-                    context.write(key, valueout);
                     key.setMetric(Metric.DIT);
+                    context.write(key, valueout);
                     key.setFile(superclsName);
                     VertexWritable message = new VertexWritable(new Text(clsName));
                     context.write(key, message);
                 } else {
                     for (ClassOrInterfaceType supercls : cls.getExtendedTypes()) {
-                        superclsName = supercls.getName().asString() + ".java";
+                        if (supercls.getScope().isPresent()) {
+                            superclsName = supercls.getScope().get().getNameAsString() + "." + supercls.getName().asString() + ".java";
+                        } else {
+                            superclsName = packageName + supercls.getName().asString() + ".java";
+                        }
                         valueout = new VertexWritable();
                         valueout.addVertex(new Text(superclsName));
                         key.setMetric(Metric.CBO);

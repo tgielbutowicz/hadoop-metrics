@@ -1,9 +1,5 @@
 package utils;
 
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -14,6 +10,10 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
 
@@ -54,7 +54,7 @@ class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
     public MetricsWritable getCurrentKey() throws IOException, InterruptedException {
         Matcher packageMatcher = packagePattern.matcher(value.toString());
         packageMatcher.find();
-        return new MetricsWritable(new Text(packageMatcher.group(1)),new Text(fileSplit.getPath().getName()));
+        return new MetricsWritable(new Text("todo"), new Text(packageMatcher.group(1) + "." + fileSplit.getPath().getName()));
     }
 
     @Override

@@ -26,7 +26,7 @@ import java.util.List;
 
 public class Driver {
 
-    public static final int INTERATIONS_LIMIT = 33;
+    public static final int INTERATIONS_LIMIT = 12;
 
     public enum UpdateCounter {
         UPDATED
