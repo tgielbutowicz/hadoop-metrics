@@ -1,5 +1,8 @@
 package utils;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.PackageDeclaration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -12,8 +15,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Optional;
 
 class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
 
@@ -21,17 +23,15 @@ class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
     private Configuration conf;
     private Text value = new Text();
     private boolean processed = false;
-    private Pattern packagePattern;
 
     @Override
-    public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+    public void initialize(InputSplit split, TaskAttemptContext context) {
         this.fileSplit = (FileSplit) split;
         this.conf = context.getConfiguration();
-        this.packagePattern = Pattern.compile("package\\s+([\\w\\.]+);");
     }
 
     @Override
-    public boolean nextKeyValue() throws IOException, InterruptedException {
+    public boolean nextKeyValue() throws IOException {
         if (!processed) {
             byte[] contents = new byte[(int) fileSplit.getLength()];
             Path file = fileSplit.getPath();
@@ -51,24 +51,29 @@ class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
     }
 
     @Override
-    public MetricsWritable getCurrentKey() throws IOException, InterruptedException {
-        Matcher packageMatcher = packagePattern.matcher(value.toString());
-        packageMatcher.find();
-        return new MetricsWritable(new Text("todo"), new Text(packageMatcher.group(1) + "." + fileSplit.getPath().getName()));
+    public MetricsWritable getCurrentKey() {
+        String fileContents = value.toString().trim();
+        CompilationUnit compilationUnit = JavaParser.parse(fileContents);
+        Optional<PackageDeclaration> packageDeclaration = compilationUnit.getPackageDeclaration();
+        String packageName = "nopackage";
+        if (packageDeclaration.isPresent()) {
+            packageName = packageDeclaration.toString().replace(";", ".").split("\\s")[1];
+        }
+        return new MetricsWritable(new Text("todo"), new Text(packageName + fileSplit.getPath().getName()));
     }
 
     @Override
-    public Text getCurrentValue() throws IOException, InterruptedException {
+    public Text getCurrentValue() {
         return value;
     }
 
     @Override
-    public float getProgress() throws IOException {
+    public float getProgress() {
         return processed ? 1.0f : 0.0f;
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         // do nothing
     }
 }

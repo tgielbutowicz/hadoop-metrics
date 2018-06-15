@@ -15,14 +15,6 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
     <dependencies>
-        <!-- JDK Tools -->
-        <dependency>
-            <groupId>com.sun</groupId>
-            <artifactId>tools</artifactId>
-            <scope>system</scope>
-            <version>1.8</version>
-            <systemPath>${java.home}/../lib/tools.jar</systemPath>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -35,19 +27,6 @@
             <artifactId>javaparser-core</artifactId>
             <version>3.6.9</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit</artifactId>
-            <version>4.9.0.201710071750-r</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>azure-storage</artifactId>
-            <version>7.0.0</version>
-        </dependency>
-
 
     </dependencies>
 
