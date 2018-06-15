@@ -23,8 +23,6 @@ public class RegexFilter extends Configured implements PathFilter {
                 return true;
             } else {
                 Matcher m = pattern.matcher(path.toString());
-                System.out.println("Is path : " + path.toString() + " matches "
-                        + conf.get("file.pattern") + " ? , " + m.matches());
                 return m.matches();
             }
         } catch (IOException e) {

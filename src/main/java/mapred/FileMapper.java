@@ -4,6 +4,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
@@ -23,6 +24,7 @@ import utils.VertexWritable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,7 +40,11 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
         NodeList<ImportDeclaration> imports = compilationUnit.getImports();
         NodeList<TypeDeclaration<?>> types = compilationUnit.getTypes();
 
-        String packageName = compilationUnit.getPackageDeclaration().toString().replace(";",".").split("\\s")[1];
+        Optional<PackageDeclaration> packageDeclaration = compilationUnit.getPackageDeclaration();
+        String packageName = "nopackage";
+        if (packageDeclaration.isPresent()) {
+            packageName = packageDeclaration.toString().replace(";", ".").split("\\s")[1];
+        }
         Pattern newLinePattern = Pattern.compile("\r\n|\r|\n");
         Pattern tagPattern = Pattern
                 .compile("(public|protected|private|static|\\s) +[\\w\\<\\>\\[\\]]+\\s+(\\w+) *\\([^\\)]*\\) *(\\{?|[^;])");
