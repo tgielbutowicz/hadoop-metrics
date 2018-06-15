@@ -12,7 +12,6 @@ import org.apache.hadoop.fs.PathFilter;
 
 public class RegexFilter extends Configured implements PathFilter {
 
-    Pattern pattern;
     Configuration conf;
     FileSystem fs;
 
@@ -22,8 +21,7 @@ public class RegexFilter extends Configured implements PathFilter {
             if (fs.isDirectory(path)) {
                 return true;
             } else {
-                Matcher m = pattern.matcher(path.toString());
-                return m.matches();
+                return path.getName().endsWith(conf.get("file.pattern"));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -38,7 +36,6 @@ public class RegexFilter extends Configured implements PathFilter {
         if (conf != null) {
             try {
                 fs = FileSystem.get(conf);
-                pattern = Pattern.compile(conf.get("file.pattern"));
             } catch (IOException e) {
                 e.printStackTrace();
             }

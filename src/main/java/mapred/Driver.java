@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class Driver {
 
-    public static final int INTERATIONS_LIMIT = 12;
+    public static final int INTERATIONS_LIMIT = 16;
 
     public enum UpdateCounter {
         UPDATED
@@ -34,7 +34,7 @@ public class Driver {
 
         Configuration metricsConf = new Configuration();
         metricsConf.set("recursion.depth", depth + "");
-        metricsConf.set("file.pattern", ".*.java");
+        metricsConf.set("file.pattern", ".java");
         Job metricsJob = Job.getInstance(metricsConf, "Calculate Metrics - Read Files");
 
         // Set driver class
