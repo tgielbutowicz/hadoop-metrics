@@ -29,12 +29,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, VertexWritable> {
+public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritable> {
 
-    private Set<String> methodsAndCalls = Sets.newHashSet();
+    private MetricsWritable key;
+    private Set<String> methodsAndCalls;
 
-    public void map(MetricsWritable key, Text value, Context context) throws IOException, InterruptedException {
-
+    public void map(Text keyPath, Text value, Context context) throws IOException, InterruptedException {
+        methodsAndCalls = Sets.newHashSet();
         String fileContents = value.toString().trim();
         CompilationUnit compilationUnit = JavaParser.parse(fileContents);
         NodeList<ImportDeclaration> imports = compilationUnit.getImports();
@@ -45,13 +46,15 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
         if (packageDeclaration.isPresent()) {
             packageName = packageDeclaration.toString().replace(";", ".").split("\\s")[1];
         }
-        Pattern newLinePattern = Pattern.compile("\r\n|\r|\n");
         Pattern tagPattern = Pattern
                 .compile("(public|protected|private|static|\\s) +[\\w\\<\\>\\[\\]]+\\s+(\\w+) *\\([^\\)]*\\) *(\\{?|[^;])");
-        Matcher locMatcher = newLinePattern.matcher(fileContents);
         Matcher tagMatcher = tagPattern.matcher(fileContents);
         Pattern methodCallPattern = Pattern.compile("(\\.[\\s\\n\\r]*[\\w]+)[\\s\\n\\r]*(?=\\(.*\\))");
         Matcher methodCallMatcher = methodCallPattern.matcher(fileContents);
+
+        key = new MetricsWritable(new Text(),new Text(packageName + keyPath));
+        key.setMetric(Metric.NOC);
+        context.write(key, getValueoutAnonymousVertexWithValue(0)); //just to assure that every class have a pair for NOC
 
         key.setMetric(Metric.WMC);
         int methods = 0;
@@ -67,20 +70,15 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
         }
         context.write(key, getValueoutAnonymousVertexWithValue(methodsAndCalls.size()));
 
-        key.setMetric(Metric.LOC);
-        int lines = 0;
-        while (locMatcher.find()) {
-            lines++;
-        }
-        context.write(key, getValueoutAnonymousVertexWithValue(lines));
-
         key.setMetric(Metric.CBO);
         context.write(key, getValueoutAnonymousVertexWithValue(imports.size()));
 
-        key.setMetric(Metric.LCOM);
         for (TypeDeclaration<?> type : types) {
             int LCOM = 0;
             if (type instanceof ClassOrInterfaceDeclaration) {
+                key.setMetric(Metric.LOC);
+                int lines = type.getEnd().get().line - type.getBegin().get().line;
+                context.write(key, getValueoutAnonymousVertexWithValue(lines));
                 int numberOfFields = 0;
                 int numberOfMethods = type.getMethods().size();
                 float sumMF = 0l;
@@ -90,6 +88,7 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
                 }
                 LCOM = Math.round((1 - (sumMF / numberOfMethods * numberOfFields)) * 100);
             }
+            key.setMetric(Metric.LCOM);
             context.write(key, getValueoutAnonymousVertexWithValue(LCOM));
         }
         methodsAndCalls.clear();
@@ -103,22 +102,18 @@ public class FileMapper extends Mapper<MetricsWritable, Text, MetricsWritable, V
                 ClassOrInterfaceDeclaration cls = (ClassOrInterfaceDeclaration) type;
                 clsName = packageName + cls.getNameAsString();
                 if (cls.getExtendedTypes().isEmpty()) {
-                    key.setMetric(Metric.NOC);
-                    context.write(key, getValueoutAnonymousVertexWithValue(0));
-                    superclsName = "Object.java";
+                    superclsName = "Object";
                     valueout = new VertexWritable();
                     valueout.addVertex(new Text(superclsName));
                     key.setMetric(Metric.DIT);
                     context.write(key, valueout);
-                    key.setFile(superclsName);
-                    VertexWritable message = new VertexWritable(new Text(clsName));
-                    context.write(key, message);
                 } else {
                     for (ClassOrInterfaceType supercls : cls.getExtendedTypes()) {
-                        if (supercls.getScope().isPresent()) {
-                            superclsName = supercls.getScope().get().getNameAsString() + "." + supercls.getName().asString() + ".java";
+                        Optional<ImportDeclaration> importDeclaration = imports.stream().filter(imp -> imp.getNameAsString().contains(supercls.getNameAsString())).findFirst();
+                        if (importDeclaration.isPresent()) {
+                            superclsName = importDeclaration.get().getNameAsString();
                         } else {
-                            superclsName = packageName + supercls.getName().asString() + ".java";
+                            superclsName = packageName + supercls.getName().asString();
                         }
                         valueout = new VertexWritable();
                         valueout.addVertex(new Text(superclsName));

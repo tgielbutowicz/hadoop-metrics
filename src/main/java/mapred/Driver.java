@@ -8,16 +8,14 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import utils.MetricsWritable;
-import utils.RegexFilter;
-import utils.VertexWritable;
-import utils.WholeFileInputFormat;
+import utils.*;
 
 import java.io.IOException;
 
 public class Driver {
 
     public static final int INTERATIONS_LIMIT = 16;
+    public static final int REDUCE_TASKS = 4;
 
     public enum UpdateCounter {
         UPDATED
@@ -43,12 +41,13 @@ public class Driver {
         metricsJob.setOutputKeyClass(MetricsWritable.class);
         metricsJob.setOutputValueClass(VertexWritable.class);
         // Set Input & Output Format
-        metricsJob.setInputFormatClass(WholeFileInputFormat.class);
+        metricsJob.setInputFormatClass(CombineSourceFileInputFormat.class);
         metricsJob.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         // Set Mapper & Reducer Class
         metricsJob.setMapperClass(FileMapper.class);
         metricsJob.setReducerClass(KeyCountReducer.class);
+        metricsJob.setNumReduceTasks(REDUCE_TASKS);
 
         // No. of reduce tasks, equals no. output file
         // metricsJob.setNumReduceTasks(1);
@@ -74,6 +73,7 @@ public class Driver {
             // Set Mapper & Reducer Class
             metricsJob.setMapperClass(GraphBuildingMapper.class);
             metricsJob.setReducerClass(GraphBuildingReducer.class);
+            metricsJob.setNumReduceTasks(REDUCE_TASKS);
 
             in = out;
             out = new Path(args[1] + depth);
@@ -113,6 +113,5 @@ public class Driver {
         metricsJob.setOutputValueClass(VertexWritable.class);
 
         metricsJob.waitForCompletion(true);
-
     }
 }

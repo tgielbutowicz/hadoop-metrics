@@ -38,7 +38,7 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
             VertexWritable value;
             for (Text message : messages) {
                 value = master.clone();
-                key.setFile(message.toString() + ".java");
+                key.setFile(message.toString());
                 context.write(key, value);
                 context.getCounter(UpdateCounter.UPDATED).increment(value.getEdges().size());
             }
