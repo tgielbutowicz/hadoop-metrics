@@ -13,12 +13,6 @@ import utils.VertexWritable;
 
 public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
-    @Override
-    protected void setup(Context context) throws IOException,
-            InterruptedException {
-        super.setup(context);
-    }
-
     public void reduce(MetricsWritable key, Iterable<VertexWritable> values, Context context) throws IOException,
             InterruptedException {
         if (Metric.DIT.equals(key.getMetric())) {

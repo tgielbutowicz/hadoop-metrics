@@ -30,7 +30,7 @@ public class VertexWritable implements Writable, Cloneable {
     }
 
     public void write(DataOutput dataOutput) throws IOException {
-        if(message == null) {
+        if (message == null) {
             dataOutput.writeBoolean(false);
         } else {
             dataOutput.writeBoolean(true);
@@ -49,7 +49,7 @@ public class VertexWritable implements Writable, Cloneable {
     }
 
     public void readFields(DataInput dataInput) throws IOException {
-        if(dataInput.readBoolean()) {
+        if (dataInput.readBoolean()) {
             message = new Text();
             message.readFields(dataInput);
         } else {
@@ -79,7 +79,7 @@ public class VertexWritable implements Writable, Cloneable {
     @Override
     public VertexWritable clone() {
         VertexWritable toReturn;
-        if(message != null) {
+        if (message != null) {
             toReturn = new VertexWritable(new Text(message));
         } else {
             toReturn = new VertexWritable();
@@ -96,10 +96,11 @@ public class VertexWritable implements Writable, Cloneable {
     }
 
     public boolean isMessage() {
-        if (edges == null)
+        if (edges == null) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     public List<Text> getEdges() {

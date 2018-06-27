@@ -2,6 +2,7 @@ package mapred;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
@@ -15,7 +16,7 @@ import java.io.IOException;
 public class Driver {
 
     public static final int INTERATIONS_LIMIT = 16;
-    public static final int REDUCE_TASKS = 4;
+    public static final int REDUCE_TASKS = 1;
 
     public enum UpdateCounter {
         UPDATED
@@ -58,7 +59,9 @@ public class Driver {
         FileInputFormat.addInputPath(metricsJob, in); // s227
         FileOutputFormat.setOutputPath(metricsJob, out);
 
+        long startTime = System.currentTimeMillis();
         metricsJob.waitForCompletion(true);
+        long stopTime = System.currentTimeMillis();
 
         long updated_prev = 0;
         long updated = metricsJob.getCounters().findCounter(UpdateCounter.UPDATED).getValue();
@@ -110,8 +113,9 @@ public class Driver {
         metricsJob.setInputFormatClass(SequenceFileInputFormat.class);
         metricsJob.setOutputFormatClass(TextOutputFormat.class);
         metricsJob.setOutputKeyClass(MetricsWritable.class);
-        metricsJob.setOutputValueClass(VertexWritable.class);
+        metricsJob.setOutputValueClass(IntWritable.class);
 
         metricsJob.waitForCompletion(true);
+        System.out.println("Read Files Time: " + (stopTime-startTime));
     }
 }

@@ -52,7 +52,7 @@ public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritab
         Pattern methodCallPattern = Pattern.compile("(\\.[\\s\\n\\r]*[\\w]+)[\\s\\n\\r]*(?=\\(.*\\))");
         Matcher methodCallMatcher = methodCallPattern.matcher(fileContents);
 
-        key = new MetricsWritable(new Text(),new Text(packageName + keyPath));
+        key = new MetricsWritable(new Text(), new Text(packageName + keyPath));
         key.setMetric(Metric.NOC);
         context.write(key, getValueoutAnonymousVertexWithValue(0)); //just to assure that every class have a pair for NOC
 
@@ -81,12 +81,12 @@ public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritab
                 context.write(key, getValueoutAnonymousVertexWithValue(lines));
                 int numberOfFields = 0;
                 int numberOfMethods = type.getMethods().size();
-                float sumMF = 0l;
+                double sumMF = 0l;
                 for (FieldDeclaration field : type.getFields()) {
                     numberOfFields++;
                     sumMF += type.getMethods().stream().map(method -> method.getBody().toString()).filter(body -> body.contains(field.toString())).count();
                 }
-                LCOM = Math.round((1 - (sumMF / numberOfMethods * numberOfFields)) * 100);
+                LCOM = Math.toIntExact(Math.round((1 - (sumMF / numberOfMethods * numberOfFields)) * 100));
             }
             key.setMetric(Metric.LCOM);
             context.write(key, getValueoutAnonymousVertexWithValue(LCOM));

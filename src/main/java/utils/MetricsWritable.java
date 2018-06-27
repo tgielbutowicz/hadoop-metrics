@@ -85,6 +85,6 @@ public class MetricsWritable implements WritableComparable<MetricsWritable>, Clo
 
     @Override
     public String toString() {
-        return metric + ";" + file;
+        return metric + ";" + project + ";" + file;
     }
 }

@@ -15,12 +15,6 @@ import java.util.List;
 public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
     @Override
-    protected void setup(Context context) throws IOException,
-            InterruptedException {
-        super.setup(context);
-    }
-
-    @Override
     protected void reduce(MetricsWritable key, Iterable<VertexWritable> values, Context context) throws IOException,
             InterruptedException {
         int sum = 0;
