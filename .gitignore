@@ -9,7 +9,7 @@
 # CMake
 cmake-build-debug/
 
-## File-based project format:
+# File-based project format:
 *.iws
 *.iml
 
