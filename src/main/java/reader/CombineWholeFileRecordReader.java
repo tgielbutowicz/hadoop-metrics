@@ -1,4 +1,4 @@
-package utils;
+package reader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -25,8 +25,7 @@ public class CombineWholeFileRecordReader extends RecordReader<Text, Text> {
     private Configuration conf;
     private boolean processed;
 
-    public CombineWholeFileRecordReader(CombineFileSplit split,
-                                        TaskAttemptContext context, Integer index) throws IOException {
+    public CombineWholeFileRecordReader(CombineFileSplit split, TaskAttemptContext context, Integer index) {
         this.fileSplit = split;
         this.path = split.getPath(index);
         this.conf = context.getConfiguration();

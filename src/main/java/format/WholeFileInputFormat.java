@@ -1,13 +1,14 @@
-package utils;
+package format;
 
-import java.io.IOException;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import reader.WholeFileRecordReader;
+import utils.MetricsWritable;
 
 public class WholeFileInputFormat extends FileInputFormat<MetricsWritable, Text> {
 
@@ -17,9 +18,7 @@ public class WholeFileInputFormat extends FileInputFormat<MetricsWritable, Text>
     }
 
     @Override
-    public RecordReader<MetricsWritable, Text> createRecordReader(
-            InputSplit split, TaskAttemptContext context) throws IOException,
-            InterruptedException {
+    public RecordReader<MetricsWritable, Text> createRecordReader(InputSplit split, TaskAttemptContext context) {
         WholeFileRecordReader reader = new WholeFileRecordReader();
         reader.initialize(split, context);
         return reader;

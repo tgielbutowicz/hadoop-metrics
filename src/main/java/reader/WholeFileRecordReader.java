@@ -1,4 +1,4 @@
-package utils;
+package reader;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -13,11 +13,12 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import utils.MetricsWritable;
 
 import java.io.IOException;
 import java.util.Optional;
 
-class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
+public class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
 
     private FileSplit fileSplit;
     private Configuration conf;

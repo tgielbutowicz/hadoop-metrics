@@ -6,10 +6,13 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import utils.*;
+import utils.MetricsWritable;
+import utils.RegexFilter;
+import utils.VertexWritable;
 
 import java.io.IOException;
 
@@ -26,14 +29,15 @@ public class Driver {
             throws IOException, ClassNotFoundException, InterruptedException {
 
         String workingDir = args[0];
+        String outputDir = args[1];
 
         int depth = 1;
         Path in = new Path(workingDir);
-        Path out = new Path(args[1] + depth);
+        Path out = new Path(outputDir + depth);
 
         Configuration metricsConf = new Configuration();
         metricsConf.set("recursion.depth", depth + "");
-        metricsConf.set("file.pattern", ".java");
+//        metricsConf.set("file.pattern", ".java");
         Job metricsJob = Job.getInstance(metricsConf, "Calculate Metrics - Read Files");
 
         // Set driver class
@@ -42,11 +46,11 @@ public class Driver {
         metricsJob.setOutputKeyClass(MetricsWritable.class);
         metricsJob.setOutputValueClass(VertexWritable.class);
         // Set Input & Output Format
-        metricsJob.setInputFormatClass(CombineSourceFileInputFormat.class);
+        metricsJob.setInputFormatClass(TextInputFormat.class);
         metricsJob.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         // Set Mapper & Reducer Class
-        metricsJob.setMapperClass(FileMapper.class);
+        metricsJob.setMapperClass(RepositoryMapper.class);
         metricsJob.setReducerClass(KeyCountReducer.class);
         metricsJob.setNumReduceTasks(REDUCE_TASKS);
 
@@ -55,7 +59,7 @@ public class Driver {
 
         // HDFS input and output path
         FileInputFormat.setInputDirRecursive(metricsJob, true);
-        FileInputFormat.setInputPathFilter(metricsJob, RegexFilter.class);
+//        FileInputFormat.setInputPathFilter(metricsJob, RegexFilter.class);
         FileInputFormat.addInputPath(metricsJob, in); // s227
         FileOutputFormat.setOutputPath(metricsJob, out);
 
@@ -79,7 +83,7 @@ public class Driver {
             metricsJob.setNumReduceTasks(REDUCE_TASKS);
 
             in = out;
-            out = new Path(args[1] + depth);
+            out = new Path(outputDir + depth);
             FileInputFormat.addInputPath(metricsJob, in);
             FileOutputFormat.setOutputPath(metricsJob, out);
 
@@ -106,7 +110,7 @@ public class Driver {
         metricsJob.setReducerClass(MetricOutputReducer.class);
 
         in = out;
-        out = new Path(args[1] + depth);
+        out = new Path(outputDir + depth);
         FileInputFormat.addInputPath(metricsJob, in);
         FileOutputFormat.setOutputPath(metricsJob, out);
 
@@ -116,6 +120,6 @@ public class Driver {
         metricsJob.setOutputValueClass(IntWritable.class);
 
         metricsJob.waitForCompletion(true);
-        System.out.println("Read Files Time: " + (stopTime-startTime));
+        System.out.println("Read Files Time: " + (stopTime - startTime));
     }
 }
