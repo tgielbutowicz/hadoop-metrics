@@ -1,5 +1,8 @@
 package mapred;
 
+import mapper.GraphBuildingMapper;
+import mapper.MetricOutputMapper;
+import mapper.RepositoryMapper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -10,16 +13,18 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.MetricsWritable;
-import utils.RegexFilter;
 import utils.VertexWritable;
 
 import java.io.IOException;
 
 public class Driver {
 
-    public static final int INTERATIONS_LIMIT = 16;
-    public static final int REDUCE_TASKS = 1;
+    private static final int INTERATIONS_LIMIT = 16;
+    private static final int REDUCE_TASKS = 1;
+    private static final Logger logger = LoggerFactory.getLogger(Driver.class);
 
     public enum UpdateCounter {
         UPDATED
@@ -37,7 +42,6 @@ public class Driver {
 
         Configuration metricsConf = new Configuration();
         metricsConf.set("recursion.depth", depth + "");
-//        metricsConf.set("file.pattern", ".java");
         Job metricsJob = Job.getInstance(metricsConf, "Calculate Metrics - Read Files");
 
         // Set driver class
@@ -65,7 +69,6 @@ public class Driver {
 
         long startTime = System.currentTimeMillis();
         metricsJob.waitForCompletion(true);
-        long stopTime = System.currentTimeMillis();
 
         long updated_prev = 0;
         long updated = metricsJob.getCounters().findCounter(UpdateCounter.UPDATED).getValue();
@@ -120,6 +123,7 @@ public class Driver {
         metricsJob.setOutputValueClass(IntWritable.class);
 
         metricsJob.waitForCompletion(true);
-        System.out.println("Read Files Time: " + (stopTime - startTime));
+        long stopTime = System.currentTimeMillis();
+        logger.debug("Job running time: {}", stopTime - startTime);
     }
 }

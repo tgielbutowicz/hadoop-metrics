@@ -1,4 +1,4 @@
-package mapred;
+package mapper;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;

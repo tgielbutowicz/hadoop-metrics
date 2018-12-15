@@ -1,4 +1,4 @@
-package mapred;
+package mapper;
 
 import com.google.common.collect.Iterators;
 import org.apache.hadoop.io.Text;

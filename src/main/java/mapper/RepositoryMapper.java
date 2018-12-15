@@ -1,10 +1,9 @@
-package mapred;
+package mapper;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
@@ -29,7 +28,10 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.eclipse.jgit.util.FS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Metric;
 import utils.MetricsWritable;
 import utils.VertexWritable;
@@ -46,20 +48,26 @@ import java.util.regex.Pattern;
 
 public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable, VertexWritable> {
 
+    private static final String JAVA = ".java";
+    private final Pattern methodCallPattern = Pattern.compile("(\\.[\\s\\n\\r]*[\\w]+)[\\s\\n\\r]*(?=\\(.*\\))");
+    private final Pattern methodDeclarationPattern = Pattern
+            .compile("(public|protected|private|static|\\s) +[\\w\\<\\>\\[\\]]+\\s+(\\w+) *\\([^\\)]*\\) *(\\{?|[^;])");
+    private final Logger logger = LoggerFactory.getLogger(RepositoryMapper.class);
     private MetricsWritable key;
     private Set<String> methodsAndCalls;
 
-    public void map(LongWritable keyPath, Text value, Context context) throws IOException, InterruptedException {
-        String project = Iterables.getLast(Lists.newArrayList(value.toString().split("/"))).replace(".git", "");
-        File destination = new File("/" + project);
+    public void map(LongWritable key, Text repoURL, Context context) throws IOException, InterruptedException {
+        String project = Iterables.getLast(Lists.newArrayList(repoURL.toString().split("/"))).replace(".git", "");
+        File destination = new File(project + "/");
         try {
             Repository repository;
             if (!Files.exists(destination.toPath()) && !RepositoryCache.FileKey.isGitRepository(destination, FS.DETECTED)) {
+                logger.debug("Cloning repository from {} to {}", repoURL.toString(), destination.getPath());
                 repository = Git.cloneRepository()
-                        .setURI(value.toString())
-                        .setDirectory(destination)
+                        .setURI(repoURL.toString())
                         .call().getRepository();
             } else {
+                logger.debug("Repository exists. Opening: {}", destination.getPath());
                 Git.open(destination).pull().call();
                 repository = Git.open(destination).getRepository();
             }
@@ -67,51 +75,42 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
             try (TreeWalk treeWalk = new TreeWalk(repository)) {
                 treeWalk.addTree(new DirCacheIterator(index));
                 treeWalk.setRecursive(true);
+                treeWalk.setFilter(PathSuffixFilter.create(JAVA));
                 while (treeWalk.next()) {
-                    ObjectId objectId = treeWalk.getObjectId(0);
-                    ObjectLoader loader = repository.open(objectId);
-                    emitMessages(keyPath, new String(loader.getBytes()), context);
+                    ObjectId fileId = treeWalk.getObjectId(0);
+                    ObjectLoader loader = repository.open(fileId);
+                    emitMessages(treeWalk.getNameString(), new String(loader.getBytes()), context);
                 }
             } finally {
                 index.unlock();
             }
             repository.close();
         } catch (GitAPIException gite) {
-            gite.printStackTrace();
+            logger.error("Error while cloning repository {}", gite);
         }
-
-
     }
 
-    private void emitMessages(Text keyPath, String value, Context context) throws IOException, InterruptedException {
+    private void emitMessages(String fileName, String fileContents, Context context) throws IOException, InterruptedException {
+        logger.debug("Processing file: {}", fileName);
         methodsAndCalls = Sets.newHashSet();
-        String fileContents = value.trim();
         CompilationUnit compilationUnit = JavaParser.parse(fileContents);
         NodeList<ImportDeclaration> imports = compilationUnit.getImports();
         NodeList<TypeDeclaration<?>> types = compilationUnit.getTypes();
 
-        Optional<PackageDeclaration> packageDeclaration = compilationUnit.getPackageDeclaration();
-        String packageName = "nopackage";
-        if (packageDeclaration.isPresent()) {
-            packageName = packageDeclaration.toString().replace(";", ".").split("\\s")[1];
-        }
-        Pattern tagPattern = Pattern
-                .compile("(public|protected|private|static|\\s) +[\\w\\<\\>\\[\\]]+\\s+(\\w+) *\\([^\\)]*\\) *(\\{?|[^;])");
-        Matcher tagMatcher = tagPattern.matcher(fileContents);
-        Pattern methodCallPattern = Pattern.compile("(\\.[\\s\\n\\r]*[\\w]+)[\\s\\n\\r]*(?=\\(.*\\))");
-        Matcher methodCallMatcher = methodCallPattern.matcher(fileContents);
+        String packageName = getPackageName(compilationUnit);
 
-        key = new MetricsWritable(new Text(), new Text(packageName + keyPath));
+        Matcher methodDeclarationMatcher = methodDeclarationPattern.matcher(fileContents);
+        Matcher methodCallMatcher = methodCallPattern.matcher(fileContents);
+        key = new MetricsWritable(new Text(), new Text(packageName + fileName));
+
         key.setMetric(Metric.NOC);
         context.write(key, getValueoutAnonymousVertexWithValue(0)); //just to assure that every class have a pair for NOC
 
         key.setMetric(Metric.WMC);
-        int methods = 0;
-        while (tagMatcher.find()) {
-            methodsAndCalls.add(tagMatcher.group());
-            methods++;
+        while (methodDeclarationMatcher.find()) {
+            methodsAndCalls.add(methodDeclarationMatcher.group());
         }
-        context.write(key, getValueoutAnonymousVertexWithValue(methods));
+        context.write(key, getValueoutAnonymousVertexWithValue(methodsAndCalls.size()));
 
         key.setMetric(Metric.RFC);
         while (methodCallMatcher.find()) {
@@ -155,15 +154,11 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
                     valueout = new VertexWritable();
                     valueout.addVertex(new Text(superclsName));
                     key.setMetric(Metric.DIT);
+                    logger.debug("Object inheritance {}", cls.getName());
                     context.write(key, valueout);
                 } else {
                     for (ClassOrInterfaceType supercls : cls.getExtendedTypes()) {
-                        Optional<ImportDeclaration> importDeclaration = imports.stream().filter(imp -> imp.getNameAsString().contains(supercls.getNameAsString())).findFirst();
-                        if (importDeclaration.isPresent()) {
-                            superclsName = importDeclaration.get().getNameAsString();
-                        } else {
-                            superclsName = packageName + supercls.getName().asString();
-                        }
+                        superclsName = getFullyQualifiedClassName(supercls, packageName, imports);
                         valueout = new VertexWritable();
                         valueout.addVertex(new Text(superclsName));
                         key.setMetric(Metric.CBO);
@@ -179,6 +174,24 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
                 }
             }
         }
+    }
+
+    private String getFullyQualifiedClassName(ClassOrInterfaceType supercls, String packageName, NodeList<ImportDeclaration> imports) {
+        Optional<ImportDeclaration> importDeclaration = imports.stream().filter(imp -> imp.getNameAsString().contains(supercls.getNameAsString())).findFirst();
+        if (importDeclaration.isPresent()) {
+            return importDeclaration.get().getNameAsString();
+        } else if (supercls.getScope().isPresent()) {
+            return supercls.getScope().get().asString() + "." + supercls.getName().asString();
+        } else {
+            return packageName + supercls.getName().asString();
+        }
+    }
+
+    private String getPackageName(CompilationUnit compilationUnit) {
+        if (compilationUnit.getPackageDeclaration().isPresent()) {
+            return compilationUnit.getPackageDeclaration().toString().replace(";", ".").split("\\s")[1];
+        }
+        return "nopackage";
     }
 
     private VertexWritable getValueoutAnonymousVertexWithValue(int lines) {
