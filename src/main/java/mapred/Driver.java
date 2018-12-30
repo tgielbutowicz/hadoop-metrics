@@ -15,6 +15,9 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reducer.GraphBuildingReducer;
+import reducer.KeyCountReducer;
+import reducer.MetricOutputReducer;
 import utils.MetricsWritable;
 import utils.VertexWritable;
 

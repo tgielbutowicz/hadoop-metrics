@@ -33,14 +33,13 @@ public class CombineWholeFileRecordReader extends RecordReader<Text, Text> {
         processed = false;
     }
 
-    public void initialize(InputSplit split, TaskAttemptContext context)
-            throws IOException, InterruptedException {
+    public void initialize(InputSplit split, TaskAttemptContext context) {
     }
 
-    public void close() throws IOException {
+    public void close() {
     }
 
-    public float getProgress() throws IOException {
+    public float getProgress() {
         return processed ? 1.0f : 0.0f;
     }
 
@@ -68,11 +67,11 @@ public class CombineWholeFileRecordReader extends RecordReader<Text, Text> {
         return false;
     }
 
-    public Text getCurrentKey() throws IOException, InterruptedException {
+    public Text getCurrentKey() {
         return key;
     }
 
-    public Text getCurrentValue() throws IOException, InterruptedException {
+    public Text getCurrentValue() {
         return value;
     }
 }

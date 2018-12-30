@@ -1,5 +1,3 @@
-package testcases;
-
 import utils.MetricsWritable;
 
 public class ClassFour extends MetricsWritable {

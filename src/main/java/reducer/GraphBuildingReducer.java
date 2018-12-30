@@ -1,23 +1,20 @@
-package mapred;
+package reducer;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import mapred.Driver.UpdateCounter;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import utils.Metric;
 import utils.MetricsWritable;
 import utils.VertexWritable;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
-public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
-
-    @Override
-    protected void reduce(MetricsWritable key, Iterable<VertexWritable> values, Context context) throws IOException,
+    public void reduce(MetricsWritable key, Iterable<VertexWritable> values, Context context) throws IOException,
             InterruptedException {
-        int sum = 0;
         if (Metric.DIT.equals(key.getMetric())) {
             List<Text> messages = new ArrayList<>();
             VertexWritable master = new VertexWritable();
@@ -36,13 +33,10 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
                 context.write(key, value);
                 context.getCounter(UpdateCounter.UPDATED).increment(value.getEdges().size());
             }
-        } else {
+        } else { // pass through
             for (VertexWritable val : values) {
-                sum += val.getValue().get();
+                context.write(key, val);
             }
-            VertexWritable valueout = new VertexWritable();
-            valueout.setValue(new IntWritable(sum));
-            context.write(key, valueout);
         }
     }
 }
