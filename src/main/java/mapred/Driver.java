@@ -25,7 +25,7 @@ import java.io.IOException;
 
 public class Driver {
 
-    private static final int INTERATIONS_LIMIT = 16;
+    private static final int INTERATIONS_LIMIT = 59;
     private static final int REDUCE_TASKS = 1;
     private static final Logger logger = LoggerFactory.getLogger(Driver.class);
 
@@ -44,6 +44,7 @@ public class Driver {
         Path out = new Path(outputDir + depth);
 
         Configuration metricsConf = new Configuration();
+        metricsConf.set("working.path", "/input/");
         metricsConf.set("recursion.depth", depth + "");
         Job metricsJob = Job.getInstance(metricsConf, "Calculate Metrics - Read Files");
 
@@ -103,6 +104,7 @@ public class Driver {
             updated = metricsJob.getCounters().findCounter(UpdateCounter.UPDATED).getValue();
             depth++;
         }
+        logger.debug("Loop finished. Updated {}. Updated previous {}. Iteration {}.", updated, updated_prev, depth);
 
         metricsConf.set("recursion.depth", depth + "");
         metricsConf.set("mapred.textoutputformat.separator", ";");

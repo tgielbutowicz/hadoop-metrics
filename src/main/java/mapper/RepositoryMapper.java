@@ -56,15 +56,16 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
     private MetricsWritable key;
     private Set<String> methodsAndCalls;
 
-    public void map(LongWritable key, Text repoURL, Context context) throws IOException, InterruptedException {
+    public void map(LongWritable key, Text repoURL, Context context) throws IOException {
         String project = Iterables.getLast(Lists.newArrayList(repoURL.toString().split("/"))).replace(".git", "");
-        File destination = new File(project + "/");
+        File destination = new File(context.getConfiguration().get("working.path") + project + "/");
         try {
             Repository repository;
             if (!Files.exists(destination.toPath()) && !RepositoryCache.FileKey.isGitRepository(destination, FS.DETECTED)) {
                 logger.debug("Cloning repository from {} to {}", repoURL.toString(), destination.getPath());
                 repository = Git.cloneRepository()
                         .setURI(repoURL.toString())
+                        .setDirectory(destination)
                         .call().getRepository();
             } else {
                 logger.debug("Repository exists. Opening: {}", destination.getPath());
@@ -79,7 +80,11 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
                 while (treeWalk.next()) {
                     ObjectId fileId = treeWalk.getObjectId(0);
                     ObjectLoader loader = repository.open(fileId);
-                    emitMessages(treeWalk.getNameString(), new String(loader.getBytes()), context);
+                    try {
+                        emitMessages(treeWalk.getNameString(), new String(loader.getBytes()), context);
+                    } catch (Exception e) {
+                        logger.error("Metrix caculation error {}", e);
+                    }
                 }
             } finally {
                 index.unlock();
