@@ -15,6 +15,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import counters.MapperCounter;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -55,10 +56,13 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
     private final Logger logger = LoggerFactory.getLogger(RepositoryMapper.class);
     private MetricsWritable key;
     private Set<String> methodsAndCalls;
+    private long startMillis;
+    private long endMillis;
 
     public void map(LongWritable key, Text repoURL, Context context) throws IOException {
+        startMillis = System.currentTimeMillis();
         String project = Iterables.getLast(Lists.newArrayList(repoURL.toString().split("/"))).replace(".git", "");
-        File destination = new File(context.getConfiguration().get("working.path") + project + "/");
+        File destination = new File(context.getConfiguration().get("working.path") + "/" + project + "/");
         try {
             Repository repository;
             if (!Files.exists(destination.toPath()) && !RepositoryCache.FileKey.isGitRepository(destination, FS.DETECTED)) {
@@ -93,10 +97,12 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
         } catch (GitAPIException gite) {
             logger.error("Error while cloning repository {}", gite);
         }
+        endMillis = System.currentTimeMillis();
+        context.getCounter(MapperCounter.DURATION).increment(endMillis - startMillis);
+        context.getCounter("Repository Mapping Time",String.valueOf(this.hashCode())).increment(endMillis - startMillis);
     }
 
     private void emitMessages(String fileName, String fileContents, Context context) throws IOException, InterruptedException {
-        logger.debug("Processing file: {}", fileName);
         methodsAndCalls = Sets.newHashSet();
         CompilationUnit compilationUnit = JavaParser.parse(fileContents);
         NodeList<ImportDeclaration> imports = compilationUnit.getImports();
@@ -106,7 +112,7 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
 
         Matcher methodDeclarationMatcher = methodDeclarationPattern.matcher(fileContents);
         Matcher methodCallMatcher = methodCallPattern.matcher(fileContents);
-        key = new MetricsWritable(new Text(), new Text(packageName + fileName));
+        key = new MetricsWritable(new Text(packageName + fileName));
 
         key.setMetric(Metric.NOC);
         context.write(key, getValueoutAnonymousVertexWithValue(0)); //just to assure that every class have a pair for NOC
@@ -170,7 +176,7 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
                         context.write(key, getValueoutAnonymousVertexWithValue(1));
                         key.setMetric(Metric.DIT);
                         context.write(key, valueout);
-                        key.setFile(superclsName);
+                        key.setClassName(superclsName);
                         VertexWritable message = new VertexWritable(new Text(clsName));
                         context.write(key, message);
                         key.setMetric(Metric.NOC);

@@ -18,7 +18,6 @@ public class MetricOutputMapper extends Mapper<MetricsWritable, VertexWritable, 
                 if(!parent.toString().equals("Object")) {
                     depth++;
                 }
-                key.setProject(value.getEdges().toString());
                 context.write(key, new IntWritable(depth));
         } else { // pass through
                 context.write(key, value.getValue());

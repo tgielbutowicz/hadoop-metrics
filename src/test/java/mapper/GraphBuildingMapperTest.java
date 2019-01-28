@@ -30,8 +30,7 @@ class GraphBuildingMapperTest {
     void shouldEmitMessage() throws IOException, InterruptedException {
         MetricsWritable key = new MetricsWritable();
         key.setMetric(Metric.DIT);
-        key.setFile("file");
-        key.setProject("project");
+        key.setClassName("file");
         VertexWritable value = new VertexWritable(new Text("message"));
         value.addVertex(new Text("subclass"));
         value.addVertex(new Text("superclass"));

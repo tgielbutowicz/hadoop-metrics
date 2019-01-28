@@ -60,7 +60,7 @@ public class WholeFileRecordReader extends RecordReader<MetricsWritable, Text> {
         if (packageDeclaration.isPresent()) {
             packageName = packageDeclaration.toString().replace(";", ".").split("\\s")[1];
         }
-        return new MetricsWritable(new Text("todo"), new Text(packageName + fileSplit.getPath().getName()));
+        return new MetricsWritable(new Text(packageName + fileSplit.getPath().getName()));
     }
 
     @Override

@@ -11,39 +11,31 @@ import java.io.IOException;
 public class MetricsWritable implements WritableComparable<MetricsWritable>, Cloneable {
 
     private Metric metric;
-    private Text project;
-    private Text file;
+    private Text className;
 
     public MetricsWritable() {
-        project = new Text();
-        file = new Text();
+        className = new Text();
     }
 
-    public MetricsWritable(Text project, Text file) {
-        this.project = project;
-        this.file = file;
+    public MetricsWritable(Text className) {
+        this.className = className;
     }
 
     public void write(DataOutput dataOutput) throws IOException {
         WritableUtils.writeEnum(dataOutput, metric);
-        project.write(dataOutput);
-        file.write(dataOutput);
+        className.write(dataOutput);
     }
 
     public void readFields(DataInput dataInput) throws IOException {
         metric = WritableUtils.readEnum(dataInput, Metric.class);
-        project.readFields(dataInput);
-        file.readFields(dataInput);
+        className.readFields(dataInput);
     }
 
     @Override
     public int compareTo(MetricsWritable other) {
         int cmp = metric.compareTo(other.metric);
         if (cmp == 0) {
-            cmp = project.compareTo(other.project);
-            if (cmp == 0) {
-                cmp = file.compareTo(other.file);
-            }
+            cmp = className.compareTo(other.className);
         }
         return cmp;
     }
@@ -54,7 +46,7 @@ public class MetricsWritable implements WritableComparable<MetricsWritable>, Clo
             return false;
         } else {
             MetricsWritable other = (MetricsWritable) o;
-            return this.metric.equals(other.getMetric()) && this.project.equals(other.getProject()) && this.file.equals(other.getFile());
+            return this.metric.equals(other.getMetric()) && this.className.equals(other.getClassName());
         }
     }
 
@@ -66,25 +58,16 @@ public class MetricsWritable implements WritableComparable<MetricsWritable>, Clo
         return metric;
     }
 
-    public void setFile(String file) {
-        this.file = new Text(file);
+    public void setClassName(String className) {
+        this.className = new Text(className);
     }
 
-    public void setProject(String project) {
-        this.project = new Text(project);
-    }
-
-    public Text getFile() {
-        return file;
-    }
-
-
-    public Text getProject() {
-        return project;
+    public Text getClassName() {
+        return className;
     }
 
     @Override
     public String toString() {
-        return metric + ";" + file + ";" + project;
+        return metric + ";" + className;
     }
 }
