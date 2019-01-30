@@ -1,6 +1,6 @@
 package mapred;
 
-import counters.MapperCounter;
+import counters.MetricsCounter;
 import mapper.GraphBuildingMapper;
 import mapper.MetricOutputMapper;
 import mapper.RepositoryMapper;
@@ -34,7 +34,7 @@ import java.io.IOException;
 public class Driver {
 
     private static final int INTERATIONS_LIMIT = 60;
-    private static final int REDUCE_TASKS = 8;
+    private static final int REDUCE_TASKS = 1;
     private static final Logger logger = LoggerFactory.getLogger(Driver.class);
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
@@ -71,7 +71,7 @@ public class Driver {
         metricsJob.waitForCompletion(true);
 
         long updated_prev = 0;
-        long updated = metricsJob.getCounters().findCounter(MapperCounter.UPDATED).getValue();
+        long updated = metricsJob.getCounters().findCounter(MetricsCounter.UPDATED).getValue();
         depth++;
         while (updated_prev != updated && depth < INTERATIONS_LIMIT) {
             metricsConf.set("recursion.depth", depth + "");
@@ -96,7 +96,7 @@ public class Driver {
 
             metricsJob.waitForCompletion(true);
             updated_prev = updated;
-            updated = metricsJob.getCounters().findCounter(MapperCounter.UPDATED).getValue();
+            updated = metricsJob.getCounters().findCounter(MetricsCounter.UPDATED).getValue();
             depth++;
         }
         logger.debug("Loop finished. Updated {}. Updated previous {}. Iteration {}.", updated, updated_prev, depth);

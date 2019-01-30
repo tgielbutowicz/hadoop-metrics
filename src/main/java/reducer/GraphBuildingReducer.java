@@ -1,9 +1,11 @@
 package reducer;
 
-import counters.MapperCounter;
+import counters.MetricsCounter;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Metric;
 import utils.MetricsWritable;
 import utils.VertexWritable;
@@ -12,10 +14,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static counters.ReducerCounter.UPDATED;
+import static counters.MetricsCounter.UPDATED;
+
 
 public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
+    private final Logger logger = LoggerFactory.getLogger(GraphBuildingReducer.class);
     private long startMillis;
     private long endMillis;
 
@@ -39,6 +43,7 @@ public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritabl
                 value = master.clone();
                 key.setClassName(message.toString());
                 context.write(key, value);
+                logger.debug("Joined class {} with class {}", key.getClassName(), value.getEdges());
                 context.getCounter(UPDATED).increment(value.getEdges().size());
             }
         } else { // pass through
@@ -47,7 +52,7 @@ public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritabl
             }
         }
         endMillis = System.currentTimeMillis();
-        context.getCounter(MapperCounter.DURATION).increment(endMillis - startMillis);
+        context.getCounter(MetricsCounter.DURATION).increment(endMillis - startMillis);
         context.getCounter("Graph Builder Reducing Time", String.valueOf(this.hashCode())).increment(endMillis - startMillis);
     }
 }

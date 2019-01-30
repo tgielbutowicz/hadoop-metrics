@@ -1,10 +1,12 @@
 package reducer;
 
-import counters.MapperCounter;
-import counters.ReducerCounter;
+import counters.MetricsCounter;
+import mapper.MetricOutputMapper;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Metric;
 import utils.MetricsWritable;
 import utils.VertexWritable;
@@ -15,6 +17,7 @@ import java.util.List;
 
 public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
+    private final Logger logger = LoggerFactory.getLogger(KeyCountReducer.class);
     private long startMillis;
     private long endMillis;
 
@@ -39,7 +42,8 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
                 value = master.clone();
                 key.setClassName(message.toString());
                 context.write(key, value);
-                context.getCounter(ReducerCounter.UPDATED).increment(value.getEdges().size());
+                logger.debug("Joined class {} with class {}", key.getClassName(), value.getEdges());
+                context.getCounter(MetricsCounter.UPDATED).increment(value.getEdges().size());
             }
         } else {
             for (VertexWritable val : values) {
@@ -50,7 +54,7 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
             context.write(key, valueout);
         }
         endMillis = System.currentTimeMillis();
-        context.getCounter(MapperCounter.DURATION).increment(endMillis - startMillis);
+        context.getCounter(MetricsCounter.DURATION).increment(endMillis - startMillis);
         context.getCounter("Key Count Reducing Time", String.valueOf(this.hashCode())).increment(endMillis - startMillis);
     }
 }

@@ -55,7 +55,7 @@ public class RepositoryDownloadMapper extends Mapper<LongWritable, Text, Text, T
                     try {
                         context.write(new Text(key.toString()), new Text(loader.getBytes()));
                     } catch (Exception e) {
-                        logger.error("Metrix caculation error {}", e);
+                        logger.error("Error writing class file {}", e);
                     }
                 }
             } finally {

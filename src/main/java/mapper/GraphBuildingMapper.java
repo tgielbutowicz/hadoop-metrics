@@ -1,7 +1,7 @@
 package mapper;
 
 import com.google.common.collect.Iterators;
-import counters.MapperCounter;
+import counters.MetricsCounter;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import utils.Metric;
@@ -26,7 +26,7 @@ public class GraphBuildingMapper extends Mapper<MetricsWritable, VertexWritable,
             context.write(key, value);
         }
         endMillis = System.currentTimeMillis();
-        context.getCounter(MapperCounter.DURATION).increment(endMillis - startMillis);
+        context.getCounter(MetricsCounter.DURATION).increment(endMillis - startMillis);
         context.getCounter("Graph Builder Mapping Time",String.valueOf(this.hashCode())).increment(endMillis - startMillis);
     }
 }

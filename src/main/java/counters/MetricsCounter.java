@@ -1,6 +1,7 @@
 package counters;
 
-public enum ReducerCounter {
+public enum MetricsCounter {
     UPDATED,
+    PARSED,
     DURATION
 }

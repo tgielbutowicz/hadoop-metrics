@@ -1,6 +1,6 @@
 package reducer;
 
-import counters.MapperCounter;
+import counters.MetricsCounter;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 import utils.MetricsWritable;
@@ -18,7 +18,7 @@ public class MetricOutputReducer extends Reducer<MetricsWritable, IntWritable, M
             context.write(key, val);
         }
         endMillis = System.currentTimeMillis();
-        context.getCounter(MapperCounter.DURATION).increment(endMillis - startMillis);
+        context.getCounter(MetricsCounter.DURATION).increment(endMillis - startMillis);
         context.getCounter("Metric Output Reducing Time", String.valueOf(this.hashCode())).increment(endMillis - startMillis);
     }
 }

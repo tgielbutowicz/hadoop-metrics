@@ -13,7 +13,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.google.common.collect.Sets;
-import counters.MapperCounter;
+import counters.MetricsCounter;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -45,8 +45,7 @@ public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritab
 
     public void map(Text fileNameKey, Text fileValue, Context context) throws IOException, InterruptedException {
         startMillis = System.currentTimeMillis();
-        context.getCounter(MapperCounter.PARSED).increment(1L);
-        String fileName = fileNameKey.toString();
+        context.getCounter(MetricsCounter.PARSED).increment(1L);
         String fileContents = fileValue.toString().trim();
 
         methodsAndCalls = Sets.newHashSet();
@@ -59,27 +58,29 @@ public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritab
 
             Matcher methodDeclarationMatcher = methodDeclarationPattern.matcher(fileContents);
             Matcher methodCallMatcher = methodCallPattern.matcher(fileContents);
-            key = new MetricsWritable(new Text(packageName + fileName));
 
-            key.setMetric(Metric.NOC);
-            context.write(key, getValueoutAnonymousVertexWithValue(0)); //just to assure that every class have a pair for NOC
-
-            key.setMetric(Metric.WMC);
-            while (methodDeclarationMatcher.find()) {
-                methodsAndCalls.add(methodDeclarationMatcher.group());
-            }
-            context.write(key, getValueoutAnonymousVertexWithValue(methodsAndCalls.size()));
-
-            key.setMetric(Metric.RFC);
-            while (methodCallMatcher.find()) {
-                methodsAndCalls.add(methodCallMatcher.group().replace(".", ""));
-            }
-            context.write(key, getValueoutAnonymousVertexWithValue(methodsAndCalls.size()));
-
-            key.setMetric(Metric.CBO);
-            context.write(key, getValueoutAnonymousVertexWithValue(imports.size()));
 
             for (TypeDeclaration<?> type : types) {
+                String fileName = type.getNameAsString();
+                key = new MetricsWritable(new Text(packageName + fileName));
+
+                key.setMetric(Metric.NOC);
+                context.write(key, getValueoutAnonymousVertexWithValue(0)); //just to assure that every class have a pair for NOC
+
+                key.setMetric(Metric.WMC);
+                while (methodDeclarationMatcher.find()) {
+                    methodsAndCalls.add(methodDeclarationMatcher.group());
+                }
+                context.write(key, getValueoutAnonymousVertexWithValue(methodsAndCalls.size()));
+
+                key.setMetric(Metric.RFC);
+                while (methodCallMatcher.find()) {
+                    methodsAndCalls.add(methodCallMatcher.group().replace(".", ""));
+                }
+                context.write(key, getValueoutAnonymousVertexWithValue(methodsAndCalls.size()));
+
+                key.setMetric(Metric.CBO);
+                context.write(key, getValueoutAnonymousVertexWithValue(imports.size()));
                 int LCOM = 0;
                 if (type instanceof ClassOrInterfaceDeclaration) {
                     key.setMetric(Metric.LOC);
@@ -107,12 +108,12 @@ public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritab
                 if (type instanceof ClassOrInterfaceDeclaration) {
                     ClassOrInterfaceDeclaration cls = (ClassOrInterfaceDeclaration) type;
                     clsName = packageName + cls.getNameAsString();
+                    key = new MetricsWritable(new Text(clsName));
                     if (cls.getExtendedTypes().isEmpty()) {
                         superclsName = "Object";
                         valueout = new VertexWritable();
                         valueout.addVertex(new Text(superclsName));
                         key.setMetric(Metric.DIT);
-                        logger.debug("Object inheritance {}", cls.getName());
                         context.write(key, valueout);
                     } else {
                         for (ClassOrInterfaceType supercls : cls.getExtendedTypes()) {
@@ -136,7 +137,7 @@ public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritab
             logger.error("Parsing error", e);
         }
         endMillis = System.currentTimeMillis();
-        context.getCounter(MapperCounter.DURATION).increment(endMillis - startMillis);
+        context.getCounter(MetricsCounter.DURATION).increment(endMillis - startMillis);
         context.getCounter("File Mapping Time", String.valueOf(this.hashCode())).increment(endMillis - startMillis);
     }
 
@@ -155,7 +156,7 @@ public class FileMapper extends Mapper<Text, Text, MetricsWritable, VertexWritab
         if (compilationUnit.getPackageDeclaration().isPresent()) {
             return compilationUnit.getPackageDeclaration().toString().replace(";", ".").split("\\s")[1];
         }
-        return "nopackage";
+        return "nopackage.";
     }
 
     private VertexWritable getValueoutAnonymousVertexWithValue(int lines) {

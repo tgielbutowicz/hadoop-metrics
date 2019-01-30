@@ -15,7 +15,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import counters.MapperCounter;
+import counters.MetricsCounter;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -98,7 +98,7 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
             logger.error("Error while cloning repository {}", gite);
         }
         endMillis = System.currentTimeMillis();
-        context.getCounter(MapperCounter.DURATION).increment(endMillis - startMillis);
+        context.getCounter(MetricsCounter.DURATION).increment(endMillis - startMillis);
         context.getCounter("Repository Mapping Time",String.valueOf(this.hashCode())).increment(endMillis - startMillis);
     }
 
@@ -165,7 +165,6 @@ public class RepositoryMapper extends Mapper<LongWritable, Text, MetricsWritable
                     valueout = new VertexWritable();
                     valueout.addVertex(new Text(superclsName));
                     key.setMetric(Metric.DIT);
-                    logger.debug("Object inheritance {}", cls.getName());
                     context.write(key, valueout);
                 } else {
                     for (ClassOrInterfaceType supercls : cls.getExtendedTypes()) {
