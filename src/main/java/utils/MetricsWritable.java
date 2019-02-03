@@ -21,6 +21,11 @@ public class MetricsWritable implements WritableComparable<MetricsWritable>, Clo
         this.className = className;
     }
 
+    public MetricsWritable(Metric metric, Text className) {
+        this.metric = metric;
+        this.className = className;
+    }
+
     public void write(DataOutput dataOutput) throws IOException {
         WritableUtils.writeEnum(dataOutput, metric);
         className.write(dataOutput);

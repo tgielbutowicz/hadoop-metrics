@@ -18,6 +18,7 @@ import java.util.List;
 public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
     private final Logger logger = LoggerFactory.getLogger(KeyCountReducer.class);
+    private VertexWritable valueout = new VertexWritable();
     private long startMillis;
     private long endMillis;
 
@@ -49,8 +50,7 @@ public class KeyCountReducer extends Reducer<MetricsWritable, VertexWritable, Me
             for (VertexWritable val : values) {
                 sum += val.getValue().get();
             }
-            VertexWritable valueout = new VertexWritable();
-            valueout.setValue(new IntWritable(sum));
+            valueout.getValue().set(sum);
             context.write(key, valueout);
         }
         endMillis = System.currentTimeMillis();

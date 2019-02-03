@@ -20,6 +20,7 @@ import static counters.MetricsCounter.UPDATED;
 public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
     private final Logger logger = LoggerFactory.getLogger(GraphBuildingReducer.class);
+    private VertexWritable valueout = new VertexWritable();
     private long startMillis;
     private long endMillis;
 
@@ -47,9 +48,12 @@ public class GraphBuildingReducer extends Reducer<MetricsWritable, VertexWritabl
                 context.getCounter(UPDATED).increment(value.getEdges().size());
             }
         } else { // pass through
+            int sum = 0;
             for (VertexWritable val : values) {
-                context.write(key, val);
+                sum += val.getValue().get();
             }
+            valueout.getValue().set(sum);
+            context.write(key, valueout);
         }
         endMillis = System.currentTimeMillis();
         context.getCounter(MetricsCounter.DURATION).increment(endMillis - startMillis);

@@ -20,6 +20,7 @@ public class VertexWritable implements Writable, Cloneable {
 
     public VertexWritable() {
         super();
+        this.message = new Text();
         this.value = new IntWritable();
     }
 
@@ -111,6 +112,10 @@ public class VertexWritable implements Writable, Cloneable {
         if (edges == null)
             edges = new ArrayList<>();
         edges.add(className);
+    }
+
+    public void setMessage(Text message) {
+        this.message = message;
     }
 
     public Text getMessage() {

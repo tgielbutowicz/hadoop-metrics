@@ -12,6 +12,7 @@ import java.io.IOException;
 
 public class GraphBuildingMapper extends Mapper<MetricsWritable, VertexWritable, MetricsWritable, VertexWritable> {
 
+    private VertexWritable message = new VertexWritable();
     private long startMillis;
     private long endMillis;
 
@@ -19,7 +20,7 @@ public class GraphBuildingMapper extends Mapper<MetricsWritable, VertexWritable,
         startMillis = System.currentTimeMillis();
         if (Metric.DIT.equals(key.getMetric())) {
             context.write(key, value);
-            VertexWritable message = new VertexWritable(new Text(key.getClassName()));
+            message.setMessage(key.getClassName());
             key.setClassName(Iterators.getLast(value.getEdges().iterator()).toString());
             context.write(key, message);
         } else {
